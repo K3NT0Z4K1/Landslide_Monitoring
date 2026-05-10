@@ -1,144 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* CENTER PAGE + BACKGROUND */
 body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  font-family: 'DM Sans', sans-serif;
   min-height: 100vh;
-
-  /* ✅ Make sure bg.jpg path is correct */
-   background: 
-     url(bg.jpg) no-repeat; 
-     display: flex;
-     justify-content: center;
-     align-items: center;
-     min-height: 100vh;
-     background: url(bg.jpg) no-repeat;
-     background-size: cover;
-     background-position: center;;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url(bg.jpg) no-repeat center center / cover;
+  position: relative;
 }
 
-/* LOGIN BOX */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(8, 22, 12, 0.78) 0%,
+    rgba(18, 40, 24, 0.65) 50%,
+    rgba(10, 26, 15, 0.80) 100%
+  );
+}
+
+/* ===== CARD ===== */
 .wrapper {
-  width: 420px;
-  background: rgba(0, 0, 0, .5);
-
-  /* glass effect */
-  backdrop-filter: blur(6px);
-
-  border: 2px solid rgba(39, 14, 14, 0.2);
-  color: #fbf8f8;
-  border-radius: 12px;
-  padding: 30px 40px;
+  position: relative;
+  z-index: 1;
+  width: 400px;
+  background: rgba(10, 24, 14, 0.60);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(140, 196, 160, 0.18);
+  border-radius: 20px;
+  padding: 44px 40px 36px;
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
-/* TITLE */
-.wrapper h1 {
+/* ===== HEADER ===== */
+.login-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.login-logo {
   font-size: 36px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.wrapper h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #e8f4ec;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.login-subtitle {
+  font-size: 12.5px;
+  color: rgba(180, 220, 190, 0.65);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+/* ===== ERROR ===== */
+.error-msg {
+  background: rgba(192, 57, 43, 0.18);
+  border: 1px solid rgba(192, 57, 43, 0.35);
+  color: #f4a09a;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
   text-align: center;
 }
 
-/* INPUT CONTAINER */
-.wrapper .input-box {
-  position: relative;
-  width: 100%;
-  height: 50px;
-  margin: 30px 0;
+/* ===== INPUT GROUP ===== */
+.input-group {
+  margin-bottom: 16px;
 }
 
-/* INPUT */
+.input-group label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(180, 220, 190, 0.6);
+  margin-bottom: 7px;
+}
+
+.input-box {
+  position: relative;
+}
+
 .input-box input {
   width: 100%;
-  height: 100%;
-  background: transparent;
-  border: none;
+  height: 46px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(140, 196, 160, 0.22);
+  border-radius: 10px;
+  color: #e8f4ec;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  padding: 0 44px 0 16px;
   outline: none;
-
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 40px;
-  font-size: 16px;
-  color: #f1ebeb;
-  padding: 20px 45px 20px 20px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
-/* PLACEHOLDER */
-.input-box input::placeholder {
-  color: #f3efef;
+.input-box input::placeholder { color: rgba(180, 220, 190, 0.35); }
+
+.input-box input:focus {
+  border-color: rgba(90, 158, 111, 0.6);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 0 0 3px rgba(90, 158, 111, 0.14);
 }
 
-/* ICON */
 .input-box i {
   position: absolute;
-  right: 20px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 20px;
+  font-size: 18px;
+  color: rgba(140, 196, 160, 0.45);
+  pointer-events: none;
 }
 
-/* REMEMBER + FORGOT */
-.wrapper .remember-forgot {
+/* ===== REMEMBER / FORGOT ===== */
+.remember-forgot {
   display: flex;
   justify-content: space-between;
-  font-size: 14.5px;
-  margin: -15px 0 15px;
+  align-items: center;
+  margin: 6px 0 24px;
+  font-size: 13px;
 }
 
-.remember-forgot label input {
-  accent-color: #fff;
-  margin-right: 3px;
+.remember-forgot label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(180, 220, 190, 0.65);
+  cursor: pointer;
+}
+
+.remember-forgot label input[type="checkbox"] {
+  accent-color: #5a9e6f;
+  width: 14px; height: 14px;
 }
 
 .remember-forgot a {
-  color: #fff;
+  color: rgba(140, 196, 160, 0.75);
   text-decoration: none;
+  font-size: 13px;
+  transition: color 0.15s;
 }
 
-.remember-forgot a:hover {
-  text-decoration: underline;
-}
+.remember-forgot a:hover { color: #8cc4a0; text-decoration: underline; }
 
-/* LOGIN BUTTON */
-.wrapper .btn {
+/* ===== BUTTON ===== */
+.btn {
   width: 100%;
-  height: 45px;
-  background: #fff;
-  border: none;
-  outline: none;
-  border-radius: 40px;
+  height: 46px;
+  background: linear-gradient(135deg, #2d5a3a 0%, #3d7a50 100%);
+  border: 1px solid rgba(90, 158, 111, 0.4);
+  border-radius: 10px;
+  color: #e8f4ec;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-
-  font-size: 16px;
-  color: #333;
-  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  box-shadow: 0 4px 14px rgba(45, 90, 58, 0.35);
 }
 
-.wrapper .btn:hover {
-  background: #599779;
+.btn:hover {
+  background: linear-gradient(135deg, #3d7a50 0%, #5a9e6f 100%);
+  box-shadow: 0 6px 20px rgba(45, 90, 58, 0.45);
+  transform: translateY(-1px);
 }
 
-/* REGISTER LINK */
-.wrapper .register-link {
-  font-size: 14.5px;
+.btn:active { transform: translateY(0); }
+
+/* ===== FOOTER LINK ===== */
+.register-link {
   text-align: center;
-  margin: 20px 0 15px;
+  margin-top: 22px;
+  font-size: 13px;
+  color: rgba(180, 220, 190, 0.5);
 }
 
-.register-link p a {
-  color: #fff;
+.register-link a {
+  color: rgba(140, 196, 160, 0.8);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
 }
 
-.register-link p a:hover {
-  text-decoration: underline;
+.register-link a:hover { color: #8cc4a0; text-decoration: underline; }
+
+/* ===== WATERMARK ===== */
+.login-watermark {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: rgba(140, 196, 160, 0.25);
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  z-index: 1;
 }
-
-
-
