@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GeoWatch — Landslide Monitoring</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --f900: #0a1a0f;
+      --f800: #112218;
+      --f700: #1a3323;
+      --f600: #1e3d28;
+      --f500: #2d5a3a;
+      --f400: #3d7a50;
+      --f300: #5a9e6f;
+      --f200: #8cc4a0;
+      --f100: #c2e0cc;
+      --f50:  #eaf4ee;
+
+      --danger:    #c0392b;
+      --danger-bg: #fdf0ee;
+      --warn:      #d97706;
+      --warn-bg:   #fef9ee;
+      --ok:        #2d7a4f;
+      --ok-bg:     #eaf4ee;
+
+      --bg:      #f0f4f1;
+      --surface: #ffffff;
+      --surface2:#f7faf7;
+      --border:  rgba(30,61,40,0.12);
+      --border2: rgba(30,61,40,0.07);
+
+      --text:    #0f2218;
+      --text2:   #3d6048;
+      --muted:   #7a9e85;
+
+      --r-sm: 6px;
+      --r:    10px;
+      --r-lg: 16px;
+
+      --shadow-sm: 0 1px 3px rgba(10,26,15,0.08);
+      --shadow:    0 4px 16px rgba(10,26,15,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ============================================================
+       LOGIN PAGE
+    ============================================================ */
+    #login-page {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .login-left {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 48px;
+      background: linear-gradient(160deg, #0a1a0f 0%, #1a3323 60%, #0f2218 100%);
+      overflow: hidden;
+    }
+
+    .login-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(45,90,58,0.3) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(29,67,40,0.2) 0%, transparent 50%);
+    }
+
+    /* Decorative topographic lines */
+    .login-left::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 38px,
+        rgba(90,158,111,0.06) 38px,
+        rgba(90,158,111,0.06) 39px
+      );
+    }
+
+    .login-left-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 380px;
+    }
+
+    .login-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .login-logo-icon {
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+
+    .login-brand-name {
+      font-size: 32px;
+      font-weight: 600;
+      color: #e8f4ec;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .login-brand-sub {
+      font-size: 12px;
+      color: rgba(140,196,160,0.6);
+      letter-spacing: 0.05em;
+      margin-top: 3px;
+    }
+
+    .login-divider {
+      width: 40px;
+      height: 2px;
+      background: var(--f300);
+      border-radius: 2px;
+      margin-bottom: 28px;
+      opacity: 0.5;
+    }
+
+    .login-desc {
+      font-size: 15px;
+      color: rgba(194,224,204,0.75);
+      line-height: 1.7;
+      margin-bottom: 36px;
+      font-weight: 300;
+    }
+
+    .login-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+
+    .login-feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(194,224,204,0.7);
+      font-size: 13.5px;
+    }
+
+    .login-feature-item i {
+      font-size: 17px;
+      color: var(--f300);
+      flex-shrink: 0;
+    }
+
+    .login-region {
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(140,196,160,0.3);
+    }
+
+    /* RIGHT FORM PANEL */
+    .login-right {
+      width: 460px;
+      flex-shrink: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 48px;
+      position: relative;
+    }
+
+    .login-card { width: 100%; max-width: 340px; }
+
+    .login-card-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--f300);
+      margin-bottom: 10px;
+    }
+
+    .login-card h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+
+    .login-card-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .error-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--danger-bg);
+      border: 1px solid rgba(192,57,43,0.2);
+      color: var(--danger);
+      font-size: 13px;
+      padding: 10px 14px;
+      border-radius: var(--r);
+      margin-bottom: 18px;
+    }
+
+    .input-group { margin-bottom: 16px; }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .input-box { position: relative; }
+
+    .input-box i.input-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 17px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .input-box input {
+      width: 100%;
+      height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 0 14px 0 40px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-box input::placeholder { color: #a8bfad; }
+
+    .input-box input:focus {
+      border-color: rgba(61,122,80,0.5);
+      box-shadow: 0 0 0 3px rgba(61,122,80,0.09);
+    }
+
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0 24px;
+    }
+
+    .remember-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--text2);
+      cursor: pointer;
+    }
+
+    .remember-label input { accent-color: var(--f400); }
+
+    .forgot-link {
+      font-size: 13px;
+      color: var(--f300);
+      text-decoration: none;
+    }
+
+    .forgot-link:hover { text-decoration: underline; }
+
+    .btn-login {
+      width: 100%;
+      height: 46px;
+      background: var(--f700);
+      border: none;
+      border-radius: var(--r);
+      color: #e8f4ec;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-login i { font-size: 20px; }
+    .btn-login:hover { background: var(--f500); transform: translateY(-1px); }
+    .btn-login:active { transform: translateY(0); }
+
+    .login-footer-note {
+      position: absolute;
+      bottom: 22px;
+      font-size: 11px;
+      color: #a8bfad;
+    }
+
+    /* ============================================================
+       APP (post-login)
+    ============================================================ */
+    #app { display: none; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 224px;
+      height: 100vh;
+      background: var(--f800);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      border-right: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .sidebar-logo {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .sidebar-logo-text h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--f100);
+      letter-spacing: -0.01em;
+    }
+
+    .sidebar-logo-text span {
+      font-size: 10px;
+      color: var(--f300);
+      letter-spacing: 0.03em;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(140,196,160,0.3);
+      padding: 10px 11px 5px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 11px;
+      border-radius: var(--r-sm);
+      color: var(--f300);
+      text-decoration: none;
+      font-size: 13.5px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      width: 100%;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-item i { font-size: 17px; flex-shrink: 0; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: var(--f100); }
+    .nav-item.active { background: var(--f500); color: #fff; font-weight: 500; }
+
+    .sidebar-footer {
+      padding: 12px 9px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: var(--r-sm);
+      background: transparent;
+      border: none;
+      color: var(--f300);
+      font-size: 13.5px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .logout-btn i { font-size: 17px; }
+    .logout-btn:hover { background: rgba(192,57,43,0.15); color: #f08070; }
+
+    /* MAIN */
+    .main { margin-left: 224px; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* TOPBAR */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border2);
+      padding: 0 24px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-left h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+    .topbar-left p  { font-size: 11px; color: var(--muted); }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .topbar-time {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text2);
+      background: var(--f50);
+      border: 1px solid var(--border);
+      padding: 4px 11px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .topbar-time i { font-size: 13px; color: var(--muted); }
+
+    .node-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .node-select-wrap i { font-size: 15px; color: var(--muted); }
+
+    .node-select-wrap select {
+      padding: 5px 26px 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a9e85' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+    }
+
+    /* TABS */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ALERT BANNER */
+    .alert-banner {
+      margin: 16px 24px 0;
+      padding: 10px 15px;
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      font-weight: 500;
+      border: 1px solid;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .alert-banner i { font-size: 17px; flex-shrink: 0; }
+    .alert-banner.normal  { background: var(--ok-bg);     border-color: rgba(45,122,79,0.2);  color: var(--ok); }
+    .alert-banner.warning { background: var(--warn-bg);   border-color: rgba(217,119,6,0.2);  color: var(--warn); }
+    .alert-banner.danger  { background: var(--danger-bg); border-color: rgba(192,57,43,0.2);  color: var(--danger); }
+
+    .alert-pulse {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      animation: pulse 1.5s ease infinite;
+    }
+
+    /* PAGE CONTENT */
+    .page-content { padding: 16px 24px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+    /* STAT GRID */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 13px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--r-lg);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--f300);
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+    }
+
+    .stat-card.danger-card::before { background: var(--danger); }
+    .stat-card.warn-card::before   { background: var(--warn); }
+    .stat-card.ok-card::before     { background: var(--ok); }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-label i { font-size: 14px; }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 300;
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-value.danger { color: var(--danger); }
+    .stat-value.warn   { color: var(--warn); }
+    .stat-value.ok     { color: var(--ok); }
+    .stat-value.risk   { font-size: 17px; font-family: 'DM Sans', sans-serif; font-weight: 600; letter-spacing: 0; }
+
+    .stat-unit { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+
+    /* PANELS */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .panel-title i { font-size: 17px; color: var(--muted); }
+
+    .panel-badge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    .panel-badge.green { background: var(--ok-bg);     color: var(--ok); }
+    .panel-badge.amber { background: var(--warn-bg);   color: var(--warn); }
+    .panel-badge.red   { background: var(--danger-bg); color: var(--danger); }
+
+    .panel-body { padding: 18px 20px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+    /* CHART */
+    .chart-wrap { position: relative; height: 250px; }
+
+    /* TABLE */
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th {
+      text-align: left;
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--border2);
+      background: var(--surface2);
+    }
+
+    .data-table td {
+      padding: 11px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border2);
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--surface2); }
+    .data-table .mono { font-family: 'DM Mono', monospace; font-size: 11.5px; color: var(--muted); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state i { font-size: 36px; margin-bottom: 10px; display: block; opacity: 0.4; }
+    .empty-state p { font-size: 13px; }
+
+    /* BADGE */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .badge::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .badge.danger  { background: var(--danger-bg); color: var(--danger); }
+    .badge.warning { background: var(--warn-bg);   color: var(--warn); }
+    .badge.normal  { background: var(--ok-bg);     color: var(--ok); }
+
+    /* LEVEL GUIDE */
+    .level-guide {
+      display: flex;
+      gap: 16px;
+      padding: 10px 20px;
+      background: var(--surface2);
+      border-top: 1px solid var(--border2);
+      flex-wrap: wrap;
+    }
+
+    .level-item { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text2); }
+    .level-dot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    /* MAP */
+    #map { height: calc(100vh - 58px); }
+
+    .map-legend {
+      background: var(--surface);
+      padding: 10px 13px;
+      font-size: 12px;
+      border-radius: var(--r);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      line-height: 2;
+      color: var(--text);
+    }
+
+    .map-legend h4 {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .map-legend i {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.35; transform: scale(0.8); }
+    }
+
+    .fade-in { animation: fadeIn 0.3s ease both; }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--f100); border-radius: 3px; }
+
+    /* RESPONSIVE */
+    @media (max-width: 960px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .login-left { display: none; }
+      .login-right { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN PAGE
+============================================================ -->
+<div id="login-page">
+
+  <!-- LEFT BRANDING -->
+  <div class="login-left">
+    <div class="login-left-inner">
+
+      <div class="login-logo-wrap">
+        <svg width="56" height="56" viewBox="0 0 72 72" fill="none" class="login-logo-icon">
+          <rect width="72" height="72" rx="16" fill="#1a3323"/>
+          <polygon points="10,56 30,24 50,40 62,30 72,44 72,56" fill="#2d5a3a"/>
+          <polygon points="4,56 24,32 44,56" fill="#3d7a50"/>
+          <polygon points="30,56 50,30 72,56" fill="#2d5a3a"/>
+          <line x1="0" y1="56" x2="72" y2="56" stroke="#5a9e6f" stroke-width="1.5"/>
+          <path d="M 53 19 A 8 8 0 0 1 61 27" fill="none" stroke="#8cc4a0" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M 49 15 A 14 14 0 0 1 65 29" fill="none" stroke="#8cc4a0" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+          <circle cx="53" cy="19" r="2.5" fill="#8cc4a0"/>
+        </svg>
+        <div>
+          <div class="login-brand-name">GeoWatch</div>
+          <div class="login-brand-sub">LANDSLIDE MONITORING SYSTEM</div>
+        </div>
+      </div>
+
+      <div class="login-divider"></div>
+
+      <p class="login-desc">
+        Real-time early warning system for landslide detection across sensor nodes in Davao Region.
+      </p>
+
+      <div class="login-features">
+        <div class="login-feature-item">
+          <i class='bx bx-radio-circle-marked'></i>
+          <span>Real-time data from 3 active sensor nodes</span>
+        </div>
+        <div class="login-feature-item">
+          <i class='bx bx-bell'></i>
+          <span>Automated risk detection and alerts</span>
+        </div>
+        <div class="login-feature-item">
+          <i class='bx bx-map-alt'></i>
+          <span>Live geospatial node monitoring</span>
+        </div>
+        <div class="login-feature-item">
+          <i class='bx bx-line-chart'></i>
+          <span>Historical sensor trend analysis</span>
+        </div>
+      </div>
+
+      <p class="login-region">Davao Region &middot; Northern Mindanao &middot; Philippines</p>
+    </div>
+  </div>
+
+  <!-- RIGHT FORM -->
+  <div class="login-right">
+    <div class="login-card">
+
+      <p class="login-card-label">Administrator Access</p>
+      <h2>Sign in to your account</h2>
+      <p class="login-card-sub">Enter your credentials to access the dashboard</p>
+
+      <div id="login-error" class="error-msg" style="display:none">
+        <i class='bx bx-error-circle'></i>
+        <span>Invalid username or password.</span>
+      </div>
+
+      <div class="input-group">
+        <label>Username</label>
+        <div class="input-box">
+          <i class='bx bx-user input-icon'></i>
+          <input type="text" id="username" placeholder="Enter your username">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-box">
+          <i class='bx bx-lock-alt input-icon'></i>
+          <input type="password" id="password" placeholder="Enter your password">
+        </div>
+      </div>
+
+      <div class="remember-forgot">
+        <label class="remember-label">
+          <input type="checkbox"> Remember me
+        </label>
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button class="btn-login" onclick="handleLogin()">
+        <span>Sign In</span>
+        <i class='bx bx-log-in-circle'></i>
+      </button>
+
+    </div>
+
+    <p class="login-footer-note">GeoWatch &copy; 2025 &middot; Davao Region</p>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     APP (Dashboard)
+============================================================ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="32" height="32" viewBox="0 0 72 72" fill="none">
+        <rect width="72" height="72" rx="14" fill="#1a3323"/>
+        <polygon points="10,56 30,24 50,40 62,30 72,44 72,56" fill="#2d5a3a"/>
+        <polygon points="4,56 24,32 44,56" fill="#3d7a50"/>
+        <polygon points="30,56 50,30 72,56" fill="#2d5a3a"/>
+        <line x1="0" y1="56" x2="72" y2="56" stroke="#5a9e6f" stroke-width="1.5"/>
+        <path d="M 53 19 A 8 8 0 0 1 61 27" fill="none" stroke="#8cc4a0" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M 49 15 A 14 14 0 0 1 65 29" fill="none" stroke="#8cc4a0" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+        <circle cx="53" cy="19" r="2.5" fill="#8cc4a0"/>
+      </svg>
+      <div class="sidebar-logo-text">
+        <h2>GeoWatch</h2>
+        <span>Monitoring System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+        <i class='bx bx-home-alt-2'></i> Dashboard
+      </button>
+      <button class="nav-item" onclick="switchTab('map', this)">
+        <i class='bx bx-map-alt'></i> Sensor Map
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="handleLogout()">
+        <i class='bx bx-log-out'></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 id="topbar-title">Dashboard</h1>
+        <p id="topbar-sub">Welcome back, Admin</p>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-time">
+          <i class='bx bx-time-five'></i>
+          <span id="clock">--:--:--</span>
+        </div>
+        <div class="node-select-wrap" id="node-select-wrap">
+          <i class='bx bx-radio-circle-marked'></i>
+          <select id="node-select" onchange="onNodeChange()">
+            <option value="1">Node 1</option>
+            <option value="2">Node 2</option>
+            <option value="3">Node 3</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-content active">
+
+      <div class="alert-banner normal fade-in" id="alert-banner">
+        <span class="alert-pulse"></span>
+        <i class='bx bx-check-shield' id="alert-icon"></i>
+        <div id="alert-text"><strong>NORMAL</strong> &mdash; Awaiting sensor data.</div>
+      </div>
+
+      <div class="page-content">
+
+        <!-- STAT CARDS -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label"><i class='bx bx-thermometer'></i> Temperature</div>
+            <div class="stat-value" id="temp">--</div>
+            <div class="stat-unit">Degrees Celsius (°C)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class='bx bx-droplet'></i> Humidity</div>
+            <div class="stat-value" id="humidity">--</div>
+            <div class="stat-unit">Relative Humidity (%)</div>
+          </div>
+          <div class="stat-card" id="soil-card">
+            <div class="stat-label"><i class='bx bx-landscape'></i> Soil Moisture</div>
+            <div class="stat-value" id="soil">--</div>
+            <div class="stat-unit">ADC Reading</div>
+          </div>
+          <div class="stat-card" id="rain-card">
+            <div class="stat-label"><i class='bx bx-cloud-rain'></i> Rainfall</div>
+            <div class="stat-value" id="rain">--</div>
+            <div class="stat-unit">Millimeters (mm)</div>
+          </div>
+          <div class="stat-card" id="risk-card">
+            <div class="stat-label"><i class='bx bx-shield-quarter'></i> Landslide Risk</div>
+            <div class="stat-value risk ok" id="risk-value">--</div>
+            <div class="stat-unit" id="risk-node">No data yet</div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class='bx bx-line-chart'></i> Temperature &amp; Humidity</div>
+              <span class="panel-badge green">Live</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class='bx bx-cloud-rain'></i> Rainfall</div>
+              <span class="panel-badge green">Live</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="rainChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class='bx bx-landscape'></i> Soil Moisture</div>
+            <span class="panel-badge green">Live</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-wrap"><canvas id="soilChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class='bx bx-table'></i> Recent Sensor Readings</div>
+            <span class="panel-badge green">Last 10 entries</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Temp (°C)</th>
+                <th>Humidity (%)</th>
+                <th>Soil Moisture</th>
+                <th>Rainfall (mm)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="readings-body">
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <i class='bx bx-data'></i>
+                    <p>No sensor readings yet. Awaiting data from nodes.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="level-guide">
+            <div class="level-item"><div class="level-dot" style="background:#2d7a4f"></div> Normal — soil &le;500, rain &le;10 mm</div>
+            <div class="level-item"><div class="level-dot" style="background:#d97706"></div> Warning — soil &gt;500, rain &gt;10 mm</div>
+            <div class="level-item"><div class="level-dot" style="background:#c0392b"></div> High Risk — soil &gt;700, rain &gt;20 mm</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAP TAB -->
+    <div id="tab-map" class="tab-content">
+      <div id="map"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+/* ============================================================
+   AUTH
+============================================================ */
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "admin123";
+
+function handleLogin() {
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const err = document.getElementById('login-error');
+
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    err.style.display = 'none';
+    initApp();
+  } else {
+    err.style.display = 'flex';
+  }
+}
+
+function handleLogout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+}
+
+// Allow Enter key on login
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+
+document.getElementById('username').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+
+/* ============================================================
+   TAB NAVIGATION
+============================================================ */
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+
+  const titles = { dashboard: 'Dashboard', map: 'Sensor Map' };
+  const subs   = { dashboard: 'Welcome back, Admin', map: 'Live node locations & alert status' };
+
+  document.getElementById('topbar-title').textContent = titles[tab];
+  document.getElementById('topbar-sub').textContent   = subs[tab];
+  document.getElementById('node-select-wrap').style.display = tab === 'dashboard' ? 'flex' : 'none';
+
+  if (tab === 'map') {
+    setTimeout(() => map.invalidateSize(), 100);
+  }
+}
+
+/* ============================================================
+   CLOCK
+============================================================ */
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0, 8);
+}
+
+/* ============================================================
+   THRESHOLDS
+============================================================ */
+const SOIL_WARN   = 500;
+const SOIL_DANGER = 700;
+const RAIN_WARN   = 10;
+const RAIN_DANGER = 20;
+
+function getRiskLevel(soil, rain) {
+  if (soil > SOIL_DANGER && rain > RAIN_DANGER) return 'danger';
+  if (soil > SOIL_WARN   && rain > RAIN_WARN)   return 'warning';
+  return 'normal';
+}
+
+function getRiskLabel(level) {
+  if (level === 'danger')  return 'HIGH RISK';
+  if (level === 'warning') return 'WARNING';
+  return 'NORMAL';
+}
+
+/* ============================================================
+   CHARTS
+============================================================ */
+let tempChart, rainChart, soilChart;
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = '#7a9e85';
+
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: { font: { size: 11, weight: '500' }, usePointStyle: true, pointStyleWidth: 7, padding: 14 }
+    },
+    tooltip: {
+      backgroundColor: 'rgba(17,34,24,0.92)',
+      titleColor: '#c2e0cc',
+      bodyColor: '#e8f4ec',
+      borderColor: 'rgba(140,196,160,0.2)',
+      borderWidth: 1,
+      padding: 10,
+      cornerRadius: 8,
+    }
+  },
+  scales: {
+    x: {
+      grid: { color: 'rgba(30,61,40,0.07)' },
+      ticks: { font: { size: 10 }, color: '#7a9e85' },
+      border: { color: 'rgba(30,61,40,0.1)' }
+    },
+    y: {
+      grid: { color: 'rgba(30,61,40,0.07)' },
+      ticks: { font: { size: 10 }, color: '#7a9e85' },
+      border: { color: 'rgba(30,61,40,0.1)' },
+      beginAtZero: false
+    }
+  }
+};
+
+function initCharts() {
+  const emptyLabels = Array(10).fill('--');
+  const emptyData   = Array(10).fill(null);
+
+  tempChart = new Chart(document.getElementById('tempChart'), {
+    type: 'line',
+    data: {
+      labels: emptyLabels,
+      datasets: [
+        {
+          label: 'Temperature (°C)',
+          data: emptyData,
+          borderColor: '#c0392b',
+          backgroundColor: 'rgba(192,57,43,0.07)',
+          borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, tension: 0.4, fill: true, yAxisID: 'y'
+        },
+        {
+          label: 'Humidity (%)',
+          data: emptyData,
+          borderColor: '#1d4ed8',
+          backgroundColor: 'rgba(29,78,216,0.05)',
+          borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, tension: 0.4, fill: true, yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      ...baseOpts,
+      scales: {
+        ...baseOpts.scales,
+        y:  { ...baseOpts.scales.y, position: 'left',  title: { display: true, text: '°C', color: '#7a9e85', font: { size: 10 } } },
+        y1: { ...baseOpts.scales.y, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: '%', color: '#7a9e85', font: { size: 10 } } }
+      }
+    }
+  });
+
+  rainChart = new Chart(document.getElementById('rainChart'), {
+    type: 'bar',
+    data: {
+      labels: emptyLabels,
+      datasets: [{ label: 'Rainfall (mm)', data: emptyData, backgroundColor: 'rgba(45,90,58,0.55)', borderColor: '#2d5a3a', borderWidth: 1.5, borderRadius: 4 }]
+    },
+    options: { ...baseOpts }
+  });
+
+  soilChart = new Chart(document.getElementById('soilChart'), {
+    type: 'line',
+    data: {
+      labels: emptyLabels,
+      datasets: [{
+        label: 'Soil Moisture',
+        data: emptyData,
+        borderColor: '#2d7a4f',
+        backgroundColor: 'rgba(45,122,79,0.08)',
+        borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5, tension: 0.4, fill: true
+      }]
+    },
+    options: { ...baseOpts }
+  });
+}
+
+/* ============================================================
+   MAP
+============================================================ */
+let map, nodeLayer;
+
+function initMap() {
+  map = L.map('map', { zoomControl: true }).setView([8.2495, 124.7541], 15);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  nodeLayer = L.layerGroup().addTo(map);
+
+  /* Placeholder markers from DB seed data */
+  const nodes = [
+    { id: 1, name: 'Node 1', location: 'Lower Slope A', lat: 8.2489, lng: 124.7532, status: 'ACTIVE', alert: 'NORMAL' },
+    { id: 2, name: 'Node 2', location: 'Lower Slope B', lat: 8.2495, lng: 124.7541, status: 'ACTIVE', alert: 'NORMAL' },
+    { id: 3, name: 'Node 3', location: 'Lower Slope C', lat: 8.2501, lng: 124.7550, status: 'ACTIVE', alert: 'NORMAL' },
+  ];
+
+  nodes.forEach(node => placeMarker(node));
+
+  const legend = L.control({ position: 'bottomright' });
+  legend.onAdd = function () {
+    const div = L.DomUtil.create('div', 'map-legend');
+    div.innerHTML = `
+      <h4>Node Status</h4>
+      <div><i style="background:#2d7a4f"></i> Normal</div>
+      <div><i style="background:#d97706"></i> Warning</div>
+      <div><i style="background:#c0392b"></i> Danger</div>
+      <div><i style="background:#9ca3af"></i> Offline</div>
+    `;
+    return div;
+  };
+  legend.addTo(map);
+}
+
+function getNodeColor(alert, status) {
+  if (status === 'OFFLINE') return { fill: '#9ca3af', border: '#6b7280' };
+  if (alert === 'DANGER')   return { fill: '#c0392b', border: '#922b21' };
+  if (alert === 'WARNING')  return { fill: '#d97706', border: '#b45309' };
+  return { fill: '#2d7a4f', border: '#1e5c3a' };
+}
+
+function getBadgeStyle(alert) {
+  if (alert === 'DANGER')  return 'background:#fdf0ee;color:#c0392b;';
+  if (alert === 'WARNING') return 'background:#fef9ee;color:#d97706;';
+  return 'background:#eaf4ee;color:#2d7a4f;';
+}
+
+function placeMarker(node) {
+  const c = getNodeColor(node.alert, node.status);
+  const marker = L.circleMarker([node.lat, node.lng], {
+    radius: 11, color: c.border, fillColor: c.fill, fillOpacity: 0.85, weight: 2.5
+  }).addTo(nodeLayer);
+
+  marker.bindPopup(`
+    <div style="font-family:'DM Sans',sans-serif;min-width:185px;padding:2px 0">
+      <div style="font-weight:600;font-size:14px;color:#0f2218;margin-bottom:8px">${node.name}</div>
+      <div style="font-size:12.5px;color:#3d6048;margin-bottom:3px">Location: ${node.location}</div>
+      <div style="font-size:12.5px;color:#3d6048;margin-bottom:10px">Status: ${node.status}</div>
+      <span style="display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;${getBadgeStyle(node.alert)}">${node.alert}</span>
+    </div>
+  `, { maxWidth: 220 });
+
+  if (node.alert === 'DANGER' || node.alert === 'WARNING') {
+    L.circleMarker([node.lat, node.lng], {
+      radius: 19, color: c.fill, fillColor: 'transparent', fillOpacity: 0, weight: 1.5, opacity: 0.35
+    }).addTo(nodeLayer);
+  }
+}
+
+/* ============================================================
+   NODE SELECT
+============================================================ */
+function onNodeChange() {
+  // Will connect to Firebase later
+  console.log('Node changed to:', document.getElementById('node-select').value);
+}
+
+/* ============================================================
+   INIT APP
+============================================================ */
+function initApp() {
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  const now = new Date();
+  document.getElementById('topbar-sub').textContent =
+    'Welcome back, Admin \u00b7 ' + now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  initCharts();
+  initMap();
+}
+</script>
+
+</body>
+</html>
