@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GeoWatch — Landslide Monitoring</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+  <link rel="stylesheet" href="assets/css/style.css">
+
+
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN PAGE
+============================================================ -->
+<div id="login-page">
+
+  <!-- LEFT BRANDING -->
+  <div class="login-left">
+    <div class="login-left-inner">
+
+      <div class="login-logo-wrap">
+        <svg width="56" height="56" viewBox="0 0 72 72" fill="none" class="login-logo-icon">
+          <rect width="72" height="72" rx="16" fill="#1a3323"/>
+          <polygon points="10,56 30,24 50,40 62,30 72,44 72,56" fill="#2d5a3a"/>
+          <polygon points="4,56 24,32 44,56" fill="#3d7a50"/>
+          <polygon points="30,56 50,30 72,56" fill="#2d5a3a"/>
+          <line x1="0" y1="56" x2="72" y2="56" stroke="#5a9e6f" stroke-width="1.5"/>
+          <path d="M 53 19 A 8 8 0 0 1 61 27" fill="none" stroke="#8cc4a0" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M 49 15 A 14 14 0 0 1 65 29" fill="none" stroke="#8cc4a0" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+          <circle cx="53" cy="19" r="2.5" fill="#8cc4a0"/>
+        </svg>
+        <div>
+          <div class="login-brand-name">GeoWatch</div>
+          <div class="login-brand-sub">LANDSLIDE MONITORING SYSTEM</div>
+        </div>
+      </div>
+
+      <div class="login-divider"></div>
+
+      <p class="login-desc">
+        Real-time early warning system for landslide detection across sensor nodes in Manolo Fortich.
+      </p>
+
+      <div class="login-features">
+        <div class="login-feature-item">
+          <i class='bx bx-radio-circle-marked'></i>
+          <span>Real-time data from 3 active sensor nodes</span>
+        </div>
+        <div class="login-feature-item">
+          <i class='bx bx-bell'></i>
+          <span>Automated risk detection and alerts</span>
+        </div>
+        <div class="login-feature-item">
+          <i class='bx bx-map-alt'></i>
+          <span>Live geospatial node monitoring</span>
+        </div>
+        <div class="login-feature-item">
+          <i class='bx bx-line-chart'></i>
+          <span>Historical sensor trend analysis</span>
+        </div>
+      </div>
+
+      <p class="login-region">Manolo Fortich &middot; Northern Mindanao &middot; Philippines</p>
+    </div>
+  </div>
+
+  <!-- RIGHT FORM -->
+  <div class="login-right">
+    <div class="login-card">
+
+      <p class="login-card-label">Administrator Access</p>
+      <h2>Sign in to your account</h2>
+      <p class="login-card-sub">Enter your credentials to access the dashboard</p>
+
+      <div id="login-error" class="error-msg" style="display:none">
+        <i class='bx bx-error-circle'></i>
+        <span>Invalid username or password.</span>
+      </div>
+
+      <div class="input-group">
+        <label>Username</label>
+        <div class="input-box">
+          <i class='bx bx-user input-icon'></i>
+          <input type="text" id="username" placeholder="Enter your username">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-box">
+          <i class='bx bx-lock-alt input-icon'></i>
+          <input type="password" id="password" placeholder="Enter your password">
+        </div>
+      </div>
+
+      <div class="remember-forgot">
+        <label class="remember-label">
+          <input type="checkbox"> Remember me
+        </label>
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button class="btn-login" onclick="handleLogin()">
+        <span>Sign In</span>
+        <i class='bx bx-log-in-circle'></i>
+      </button>
+
+    </div>
+
+    <p class="login-footer-note">GeoWatch &copy; 2025 &middot; Davao Region</p>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     APP (Dashboard)
+============================================================ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="32" height="32" viewBox="0 0 72 72" fill="none">
+        <rect width="72" height="72" rx="14" fill="#1a3323"/>
+        <polygon points="10,56 30,24 50,40 62,30 72,44 72,56" fill="#2d5a3a"/>
+        <polygon points="4,56 24,32 44,56" fill="#3d7a50"/>
+        <polygon points="30,56 50,30 72,56" fill="#2d5a3a"/>
+        <line x1="0" y1="56" x2="72" y2="56" stroke="#5a9e6f" stroke-width="1.5"/>
+        <path d="M 53 19 A 8 8 0 0 1 61 27" fill="none" stroke="#8cc4a0" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M 49 15 A 14 14 0 0 1 65 29" fill="none" stroke="#8cc4a0" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+        <circle cx="53" cy="19" r="2.5" fill="#8cc4a0"/>
+      </svg>
+      <div class="sidebar-logo-text">
+        <h2>GeoWatch</h2>
+        <span>Monitoring System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+        <i class='bx bx-home-alt-2'></i> Dashboard
+      </button>
+      <button class="nav-item" onclick="switchTab('map', this)">
+        <i class='bx bx-map-alt'></i> Sensor Map
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="handleLogout()">
+        <i class='bx bx-log-out'></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 id="topbar-title">Dashboard</h1>
+        <p id="topbar-sub">Welcome back, Admin</p>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-time">
+          <i class='bx bx-time-five'></i>
+          <span id="clock">--:--:--</span>
+        </div>
+        <div class="node-select-wrap" id="node-select-wrap">
+          <i class='bx bx-radio-circle-marked'></i>
+          <select id="node-select" onchange="onNodeChange()">
+            <option value="1">Node 1</option>
+            <option value="2">Node 2</option>
+            <option value="3">Node 3</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-content active">
+
+      <div class="alert-banner normal fade-in" id="alert-banner">
+        <span class="alert-pulse"></span>
+        <i class='bx bx-check-shield' id="alert-icon"></i>
+        <div id="alert-text"><strong>NORMAL</strong> &mdash; Awaiting sensor data.</div>
+      </div>
+
+      <div class="page-content">
+
+        <!-- STAT CARDS -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label"><i class='bx bx-thermometer'></i> Temperature</div>
+            <div class="stat-value" id="temp">--</div>
+            <div class="stat-unit">Degrees Celsius (°C)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label"><i class='bx bx-droplet'></i> Humidity</div>
+            <div class="stat-value" id="humidity">--</div>
+            <div class="stat-unit">Relative Humidity (%)</div>
+          </div>
+          <div class="stat-card" id="soil-card">
+            <div class="stat-label"><i class='bx bx-landscape'></i> Soil Moisture</div>
+            <div class="stat-value" id="soil">--</div>
+            <div class="stat-unit">ADC Reading</div>
+          </div>
+          <div class="stat-card" id="rain-card">
+            <div class="stat-label"><i class='bx bx-cloud-rain'></i> Rainfall</div>
+            <div class="stat-value" id="rain">--</div>
+            <div class="stat-unit">Millimeters (mm)</div>
+          </div>
+          <div class="stat-card" id="risk-card">
+            <div class="stat-label"><i class='bx bx-shield-quarter'></i> Landslide Risk</div>
+            <div class="stat-value risk ok" id="risk-value">--</div>
+            <div class="stat-unit" id="risk-node">No data yet</div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class='bx bx-line-chart'></i> Temperature &amp; Humidity</div>
+              <span class="panel-badge green">Live</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="tempChart"></canvas></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class='bx bx-cloud-rain'></i> Rainfall</div>
+              <span class="panel-badge green">Live</span>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="rainChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class='bx bx-landscape'></i> Soil Moisture</div>
+            <span class="panel-badge green">Live</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-wrap"><canvas id="soilChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class='bx bx-table'></i> Recent Sensor Readings</div>
+            <span class="panel-badge green">Last 10 entries</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Temp (°C)</th>
+                <th>Humidity (%)</th>
+                <th>Soil Moisture</th>
+                <th>Rainfall (mm)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="readings-body">
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <i class='bx bx-data'></i>
+                    <p>No sensor readings yet. Awaiting data from nodes.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="level-guide">
+            <div class="level-item"><div class="level-dot" style="background:#2d7a4f"></div> Normal — soil &le;500, rain &le;10 mm</div>
+            <div class="level-item"><div class="level-dot" style="background:#d97706"></div> Warning — soil &gt;500, rain &gt;10 mm</div>
+            <div class="level-item"><div class="level-dot" style="background:#c0392b"></div> High Risk — soil &gt;700, rain &gt;20 mm</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAP TAB -->
+    <div id="tab-map" class="tab-content">
+      <div id="map"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="assets/js/script.js"></script>
+
+</body>
+</html>
