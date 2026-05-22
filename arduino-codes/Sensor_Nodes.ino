@@ -37,7 +37,7 @@
    Normal monitoring: 1 minute
    Alert: sends immediately
 --------------------------- */
-const long INTERVAL = 60000; // 1 minute in milliseconds
+const long INTERVAL = 300000; // 5 minutes in milliseconds (heartbeat)
 
 /* ---------------------------
    OBJECTS & GLOBALS
@@ -75,7 +75,7 @@ void setup() {
   Serial.println("---------------------------");
   Serial.println("SlopeGuard Sensor Node Ready");
   Serial.println("Node ID  : " + String(NODE_ID));
-  Serial.println("Interval : 60s normal / immediate on alert");
+  Serial.println("Interval : 5min heartbeat / immediate on alert");
   Serial.println("---------------------------");
 }
 
@@ -97,7 +97,7 @@ void transmit(float temperature, float humidity, int soil, float rainfall, bool 
   /* Serial log */
   Serial.println("---------------------------");
   Serial.println(isAlert ? "*** ALERT — Sending immediately ***"
-                         : "Routine reading — interval reached");
+                         : "Heartbeat — 5 minute interval reached");
   Serial.println("Payload      : " + payload);
   Serial.println("Temperature  : " + String(temperature, 2) + " C");
   Serial.println("Humidity     : " + String(humidity, 2)    + " %");
