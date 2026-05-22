@@ -89,11 +89,17 @@ When Warning or High Risk is triggered on the sensor node, it bypasses the 1 min
 
 ```
 slopeguard/
+├── arduino-codes/
+│   ├── Master_Node.ino     ← ESP32 code (upload to master node)
+│   └── Sensor_Nodes.ino    ← Arduino MEGA code (upload to each sensor node)
+├── assets/
+│   ├── css/
+│   │   └── style.css       ← Dashboard stylesheet
+│   └── js/
+│       └── script.js       ← Dashboard scripts
 ├── index.html              ← Full dashboard (login + dashboard + map)
 ├── vercel.json             ← Vercel deployment config
-├── README.md               ← This file
-├── Sensor_Nodes.ino        ← Arduino MEGA code (upload to each sensor node)
-└── Master_Node.ino         ← ESP32 code (upload to master node)
+└── README.md               ← This file
 ```
 
 ---
