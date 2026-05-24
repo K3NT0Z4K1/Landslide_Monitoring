@@ -197,6 +197,11 @@ void parseAndSend(String data) {
   /* Send to Firebase */
   sendToFirebase(node_id, temp, hum, soil, rain, dashboardStatus);
   updateNodeStatus(node_id, soil, rain, dashboardStatus);
+
+  /* Log to alert_history on WARNING or DANGER only */
+  if (dashboardStatus == "WARNING" || dashboardStatus == "DANGER") {
+    logAlertHistory(node_id, soil, rain, dashboardStatus);
+  }
 }
 
 /* ---------------------------
@@ -337,6 +342,47 @@ void updateNodeStatus(int node, int soil, float rain, String status) {
 
   int httpCode = http.PATCH(payload);
   Serial.println("Node status update : HTTP " + String(httpCode));
+
+  http.end();
+}
+
+/* ---------------------------
+   LOG ALERT HISTORY
+   POST to alert_history/
+   Only called on WARNING or DANGER
+--------------------------- */
+void logAlertHistory(int node, int soil, float rain, String status) {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("ERROR: No WiFi — alert history not logged");
+    return;
+  }
+
+  String url = "https://" + String(FIREBASE_HOST) +
+               "/alert_history.json?auth=" + String(FIREBASE_API_KEY);
+
+  StaticJsonDocument<192> doc;
+  doc["node_id"]       = node;
+  doc["soil_moisture"] = soil;
+  doc["rainfall"]      = rain;
+  doc["status"]        = status;
+  doc["timestamp"]     = millis();
+
+  String payload;
+  serializeJson(doc, payload);
+
+  HTTPClient http;
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(5000);
+
+  int httpCode = http.POST(payload);
+
+  Serial.println("Alert history log : HTTP " + String(httpCode));
+  if (httpCode > 0) {
+    Serial.println("Alert history ID  : " + http.getString());
+  } else {
+    Serial.println("Alert history ERR : " + http.errorToString(httpCode));
+  }
 
   http.end();
 }
