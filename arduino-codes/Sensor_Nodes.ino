@@ -1,58 +1,147 @@
 #include <SPI.h>
 #include <LoRa.h>
 #include <DHT.h>
+#include <Wire.h>
+#include "DFRobot_RainfallSensor.h"
 
 /* ---------------------------
    NODE CONFIGURATION
    Change NODE_ID to 1, 2, or 3
    before uploading to each node
 --------------------------- */
-#define NODE_ID  1
+#define NODE_ID  3
 
 /* ---------------------------
    PIN DEFINITIONS
 --------------------------- */
 #define DHTPIN   7
 #define DHTTYPE  DHT22
-
 #define SOIL_PIN A0
-#define RAIN_PIN 5
-
 #define NSS      10
 #define RST      9
 #define DIO0     2
 
 /* ---------------------------
-   ALERT THRESHOLDS
-   Match these with Master Node
-   and dashboard values
+   LORA SETTINGS
+   Must match Master Node
 --------------------------- */
-#define SOIL_WARN   500
-#define SOIL_DANGER 700
-#define RAIN_WARN   10
-#define RAIN_DANGER 20
+#define LORA_FREQ 915E6
 
 /* ---------------------------
-   SEND INTERVAL
-   Normal monitoring: 1 minute
-   Alert: sends immediately
+   SOIL CALIBRATION
 --------------------------- */
-const long INTERVAL = 300000; // 5 minutes in milliseconds (heartbeat)
+const int AirValue   = 570;  // dry reading
+const int WaterValue = 0;    // wet reading
+
+/* ---------------------------
+   THRESHOLDS
+--------------------------- */
+const int   SOIL_CAUTION = 50;
+const int   SOIL_WARNING = 67;
+const int   SOIL_DANGER  = 80;
+
+const float RAIN_CAUTION = 10.0;
+const float RAIN_WARNING = 20.0;
+const float RAIN_DANGER  = 25.0;
+
+/* ---------------------------
+   TRANSMISSION INTERVAL
+   Heartbeat : 5 minutes
+   Alert     : immediate
+   (adviser recommendation —
+   keep DB clean, send
+   immediately on abnormality)
+--------------------------- */
+const long INTERVAL = 300000; // 5 minutes in milliseconds
 
 /* ---------------------------
    OBJECTS & GLOBALS
 --------------------------- */
 DHT dht(DHTPIN, DHTTYPE);
+DFRobot_RainfallSensor_I2C RainSensor(&Wire);
 
-volatile int rainCount = 0;
-unsigned long lastSend  = 0;
+unsigned long lastSend = 0;
 
 /* ---------------------------
-   RAIN GAUGE INTERRUPT
-   0.2794mm per tip
+   SOIL HELPERS
 --------------------------- */
-void rainISR() {
-  rainCount++;
+int readSoilAverage() {
+  long total = 0;
+  const int samples = 10;
+  for (int i = 0; i < samples; i++) {
+    total += analogRead(SOIL_PIN);
+    delay(20);
+  }
+  return total / samples;
+}
+
+int getSoilPercent(int soilRaw) {
+  int percent = map(soilRaw, AirValue, WaterValue, 0, 100);
+  return constrain(percent, 0, 100);
+}
+
+String getSoilStatus(int soilPercent) {
+  if (soilPercent >= SOIL_DANGER)  return "SATURATED";
+  if (soilPercent >= SOIL_WARNING) return "VERY_WET";
+  if (soilPercent >= SOIL_CAUTION) return "WET";
+  return "NORMAL";
+}
+
+/* ---------------------------
+   RAIN HELPER
+--------------------------- */
+String getRainStatus(float rain1Hour) {
+  if (rain1Hour >= RAIN_DANGER)  return "DANGER";
+  if (rain1Hour >= RAIN_WARNING) return "WARNING";
+  if (rain1Hour >= RAIN_CAUTION) return "CAUTION";
+  return "NORMAL";
+}
+
+/* ---------------------------
+   LANDSLIDE RISK LOGIC
+--------------------------- */
+String getLandslideRisk(int soilPercent, float rain1Hour) {
+  if (soilPercent >= SOIL_DANGER  && rain1Hour >= RAIN_DANGER)  return "HIGH_RISK";
+  if (soilPercent >= SOIL_DANGER  && rain1Hour >= RAIN_WARNING) return "HIGH_RISK";
+  if (soilPercent >= SOIL_WARNING && rain1Hour >= RAIN_WARNING) return "MODERATE_RISK";
+  if (soilPercent >= SOIL_DANGER)                               return "MODERATE_RISK";
+  if (rain1Hour   >= RAIN_DANGER)                               return "MODERATE_RISK";
+  if (soilPercent >= SOIL_CAUTION && rain1Hour >= RAIN_CAUTION) return "LOW_RISK";
+  return "NORMAL";
+}
+
+/* ---------------------------
+   TRANSMIT
+--------------------------- */
+void transmit(float temperature, float humidity, int soilPercent,
+              float rain1Hour, String landslideRisk,
+              String soilStatus, String rainStatus, bool isAlert) {
+
+  /* Payload: node,temp,humidity,soilPercent,rain,landslideRisk */
+  String payload = String(NODE_ID)          + "," +
+                   String(temperature, 2)   + "," +
+                   String(humidity, 2)      + "," +
+                   String(soilPercent)      + "," +
+                   String(rain1Hour, 2)     + "," +
+                   landslideRisk;
+
+  LoRa.beginPacket();
+  LoRa.print(payload);
+  LoRa.endPacket();
+
+  Serial.println("---------------------------");
+  Serial.println(isAlert ? "*** ALERT — Sending immediately ***"
+                         : "Heartbeat — 5 minute interval reached");
+  Serial.println("Payload Sent   : " + payload);
+  Serial.println("Temperature    : " + String(temperature, 2) + " C");
+  Serial.println("Humidity       : " + String(humidity, 2)    + " %");
+  Serial.println("Soil Moisture  : " + String(soilPercent)    + "%");
+  Serial.println("Soil Status    : " + soilStatus);
+  Serial.println("Rain 1 Hour    : " + String(rain1Hour, 2)   + " mm");
+  Serial.println("Rain Status    : " + rainStatus);
+  Serial.println("Landslide Risk : " + landslideRisk);
+
+  lastSend = millis();
 }
 
 /* ---------------------------
@@ -60,17 +149,27 @@ void rainISR() {
 --------------------------- */
 void setup() {
   Serial.begin(9600);
-
-  pinMode(RAIN_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(RAIN_PIN), rainISR, FALLING);
+  Wire.begin();
 
   dht.begin();
 
+  Serial.println("Initializing rain sensor...");
+  while (!RainSensor.begin()) {
+    Serial.println("Rain sensor init error!");
+    delay(1000);
+  }
+  Serial.println("Rain sensor ready!");
+
   LoRa.setPins(NSS, RST, DIO0);
-  if (!LoRa.begin(915E6)) {
-    Serial.println("LoRa initialization failed");
+  if (!LoRa.begin(LORA_FREQ)) {
+    Serial.println("LoRa initialization failed!");
     while (1);
   }
+
+  LoRa.setSpreadingFactor(12);
+  LoRa.setSignalBandwidth(125E3);
+  LoRa.setCodingRate4(5);
+  LoRa.setSyncWord(0x12);
 
   Serial.println("---------------------------");
   Serial.println("SlopeGuard Sensor Node Ready");
@@ -80,73 +179,46 @@ void setup() {
 }
 
 /* ---------------------------
-   TRANSMIT PAYLOAD
---------------------------- */
-void transmit(float temperature, float humidity, int soil, float rainfall, bool isAlert) {
-  /* Format: node_id,temp,humidity,soil,rainfall */
-  String payload = String(NODE_ID)         + "," +
-                   String(temperature, 2)  + "," +
-                   String(humidity, 2)     + "," +
-                   String(soil)            + "," +
-                   String(rainfall, 2);
-
-  LoRa.beginPacket();
-  LoRa.print(payload);
-  LoRa.endPacket();
-
-  /* Serial log */
-  Serial.println("---------------------------");
-  Serial.println(isAlert ? "*** ALERT — Sending immediately ***"
-                         : "Heartbeat — 5 minute interval reached");
-  Serial.println("Payload      : " + payload);
-  Serial.println("Temperature  : " + String(temperature, 2) + " C");
-  Serial.println("Humidity     : " + String(humidity, 2)    + " %");
-  Serial.println("Soil         : " + String(soil));
-  Serial.println("Rainfall     : " + String(rainfall, 2)    + " mm");
-  Serial.println("Alert level  : " + String(
-    (soil > SOIL_DANGER && rainfall > RAIN_DANGER) ? "HIGH RISK" :
-    (soil > SOIL_WARN   && rainfall > RAIN_WARN)   ? "WARNING"   :
-                                                      "NORMAL"
-  ));
-
-  /* Reset timer */
-  lastSend = millis();
-}
-
-/* ---------------------------
    MAIN LOOP
    Checks every 1 second
    Sends immediately on alert
-   Sends every 60s on normal
+   Sends every 5min on normal
 --------------------------- */
 void loop() {
 
-  /* Read sensors */
   float temperature = dht.readTemperature();
   float humidity    = dht.readHumidity();
-  int   soil        = analogRead(SOIL_PIN);
-  float rainfall    = rainCount * 0.2794;
 
-  /* Reset rain counter after reading */
-  rainCount = 0;
-
-  /* Validate DHT reading */
   if (isnan(temperature) || isnan(humidity)) {
-    Serial.println("ERROR: DHT22 read failed — retrying");
+    Serial.println("ERROR: DHT22 failed — retrying");
     delay(2000);
     return;
   }
 
-  /* Determine if alert condition is active */
-  bool isAlert = (soil > SOIL_WARN   && rainfall > RAIN_WARN) ||
-                 (soil > SOIL_DANGER && rainfall > RAIN_DANGER);
+  int soilRaw     = readSoilAverage();
+  int soilPercent = getSoilPercent(soilRaw);
 
-  /* Determine if normal interval has been reached */
+  float rain1Hour = RainSensor.getRainfall(1);
+
+  if (rain1Hour < 0 || rain1Hour > 300) {
+    Serial.println("ERROR: Abnormal rain sensor reading — defaulting to 0");
+    rain1Hour = 0;
+  }
+
+  String soilStatus    = getSoilStatus(soilPercent);
+  String rainStatus    = getRainStatus(rain1Hour);
+  String landslideRisk = getLandslideRisk(soilPercent, rain1Hour);
+
+  /* Alert if anything above NORMAL */
+  bool isAlert = (landslideRisk != "NORMAL");
+
+  /* Send immediately on alert OR when interval reached */
   bool intervalReached = (millis() - lastSend >= INTERVAL);
 
-  /* Send if alert triggered OR interval reached */
   if (isAlert || intervalReached) {
-    transmit(temperature, humidity, soil, rainfall, isAlert);
+    transmit(temperature, humidity, soilPercent,
+             rain1Hour, landslideRisk,
+             soilStatus, rainStatus, isAlert);
   }
 
   /* Check every 1 second */
