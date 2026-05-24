@@ -335,7 +335,80 @@ function timeSince(ts) {
   return Math.floor(seconds / 86400) + 'd ago';
 }
 
-/* ===== FIREBASE LISTENERS ===== */
+/* ===== EXPORT ===== */
+
+/* Cache the last loaded readings so export always reflects what's on screen */
+let currentReadingsCache = [];
+let currentNodeCache = 1;
+
+function getExportFilename(nodeId, ext) {
+  const d = new Date();
+  const date = d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+  return `slopeguard_node${nodeId}_${date}.${ext}`;
+}
+
+window.exportData = function (format) {
+  if (!currentReadingsCache.length) {
+    alert('No readings loaded yet. Wait for data to arrive from Firebase.');
+    return;
+  }
+
+  const nodeId   = currentNodeCache;
+  const readings = [...currentReadingsCache]; /* newest-first for export */
+
+  let content, mime, filename;
+
+  if (format === 'csv') {
+    const header = 'Date & Time,Temperature (°C),Humidity (%),Soil Moisture (%),Rainfall (mm),Status';
+    const rows = readings.map(r => {
+      const lv  = getRiskLevel(r.soil_moisture, r.rainfall);
+      const lbl = getRiskLabel(lv);
+      /* Wrap datetime in quotes to handle commas */
+      return [
+        `"${r.datetime || r.time || '--'}"`,
+        parseFloat(r.temperature).toFixed(1),
+        parseFloat(r.humidity).toFixed(1),
+        r.soil_moisture,
+        parseFloat(r.rainfall).toFixed(2),
+        lbl
+      ].join(',');
+    });
+    content  = [header, ...rows].join('\r\n');
+    mime     = 'text/csv;charset=utf-8;';
+    filename = getExportFilename(nodeId, 'csv');
+
+  } else {
+    /* JSON — clean array of raw reading objects */
+    const clean = readings.map(r => ({
+      datetime:     r.datetime || r.time || '--',
+      node_id:      r.node_id  || nodeId,
+      temperature:  parseFloat(r.temperature),
+      humidity:     parseFloat(r.humidity),
+      soil_moisture: r.soil_moisture,
+      rainfall:     parseFloat(r.rainfall),
+      status:       r.status || getRiskLabel(getRiskLevel(r.soil_moisture, r.rainfall)),
+      timestamp:    r.timestamp
+    }));
+    content  = JSON.stringify(clean, null, 2);
+    mime     = 'application/json;charset=utf-8;';
+    filename = getExportFilename(nodeId, 'json');
+  }
+
+  /* Trigger download */
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+
 
 let unsubLatest = null, unsubHistory = null, unsubNodes = null, unsubAlerts = null;
 
@@ -366,6 +439,9 @@ function listenToNode(nodeId) {
         time:     new Date(r.timestamp).toTimeString().slice(0, 5),
         datetime: new Date(r.timestamp).toLocaleString()
       }));
+    /* Keep cache in sync for export */
+    currentReadingsCache = [...readings].reverse(); /* newest first */
+    currentNodeCache     = nodeId;
     updateCharts(readings);
     updateTable(readings);
   });
