@@ -20,7 +20,6 @@
     <div class="login-left-inner">
 
       <div class="login-logo-wrap">
-        <!-- SlopeGuard Logo SVG (large) -->
         <svg width="64" height="64" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs><clipPath id="sc1"><path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z"/></clipPath></defs>
           <path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z" fill="#0d2a2b" stroke="#0e9fa0" stroke-width="2.5"/>
@@ -108,7 +107,6 @@
 
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <!-- Compact sidebar logo -->
       <svg width="34" height="34" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs><clipPath id="sc2"><path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z"/></clipPath></defs>
         <path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z" fill="#0d2a2b" stroke="#0e9fa0" stroke-width="2.5"/>
@@ -140,6 +138,10 @@
       </button>
       <button class="nav-item" onclick="switchTab('map', this)">
         <i class='bx bx-map-alt'></i> Sensor Map
+      </button>
+      <button class="nav-item" onclick="switchTab('alerts', this)">
+        <i class='bx bx-bell'></i> Alert History
+        <span class="nav-alert-count" id="nav-alert-count" style="display:none"></span>
       </button>
     </nav>
 
@@ -195,7 +197,7 @@
           <div class="stat-card" id="soil-card">
             <div class="stat-label"><i class='bx bx-landscape'></i> Soil Moisture</div>
             <div class="stat-value" id="soil">--</div>
-            <div class="stat-unit">ADC Reading</div>
+            <div class="stat-unit">Saturation (%)</div>
           </div>
           <div class="stat-card" id="rain-card">
             <div class="stat-label"><i class='bx bx-cloud-rain'></i> Rainfall</div>
@@ -272,6 +274,65 @@
     <div id="tab-map" class="tab-content">
       <div id="map"></div>
     </div>
+
+    <!-- ALERTS TAB -->
+    <div id="tab-alerts" class="tab-content">
+      <div class="page-content">
+
+        <!-- Summary strip -->
+        <div class="alert-summary-strip" id="alert-summary-strip">
+          <div class="alert-sum-item">
+            <span class="alert-sum-num" id="sum-total">0</span>
+            <span class="alert-sum-lbl">Total Events</span>
+          </div>
+          <div class="alert-sum-divider"></div>
+          <div class="alert-sum-item">
+            <span class="alert-sum-num danger" id="sum-danger">0</span>
+            <span class="alert-sum-lbl">Danger</span>
+          </div>
+          <div class="alert-sum-divider"></div>
+          <div class="alert-sum-item">
+            <span class="alert-sum-num warn" id="sum-warning">0</span>
+            <span class="alert-sum-lbl">Warning</span>
+          </div>
+          <div class="alert-sum-divider"></div>
+          <div class="alert-sum-item" id="sum-last-wrap">
+            <span class="alert-sum-num small" id="sum-last">--</span>
+            <span class="alert-sum-lbl">Last Event</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class='bx bx-bell'></i> Alert Event Log
+            </div>
+            <span class="panel-badge teal" id="alert-count-badge">Live</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Node</th>
+                <th>Soil Moisture</th>
+                <th>Rainfall (mm)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="alert-history-body">
+              <tr><td colspan="5">
+                <div class="empty-state">
+                  <i class='bx bx-bell-off'></i>
+                  <p>No alert events recorded yet. System is monitoring.</p>
+                </div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
