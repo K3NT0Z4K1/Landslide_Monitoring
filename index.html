@@ -239,7 +239,15 @@
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title"><i class='bx bx-table'></i> Recent Sensor Readings</div>
-            <span class="panel-badge teal">Last 20 entries</span>
+            <div class="export-wrap">
+              <span class="panel-badge teal">Last 20 entries</span>
+              <button class="export-btn" onclick="exportData('csv')" title="Download CSV">
+                <i class='bx bx-download'></i> CSV
+              </button>
+              <button class="export-btn" onclick="exportData('json')" title="Download JSON">
+                <i class='bx bx-code-alt'></i> JSON
+              </button>
+            </div>
           </div>
           <table class="data-table">
             <thead>
