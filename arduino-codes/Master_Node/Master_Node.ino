@@ -39,7 +39,7 @@ const char* password = "Nbsc@2k25";
    Example:
    "http://yourdomain.com/slopeguard/api/receive_data.php"
 --------------------------- */
-const char* serverURL = "http://ics-dev.io/slopeguard/api/receive_data.php";
+const char* serverURL = "https://ics-dev.io/slopeguard/api/receive_data.php";
 
 /* ---------------------------
    SMS SETTINGS
@@ -206,7 +206,7 @@ void parseAndSend(String data) {
 String convertStatus(String status) {
   status.toUpperCase();
   if (status == "NORMAL")        return "SAFE";
-  if (status == "LOW_RISK")      return "WARNING";
+  if (status == "LOW_RISK")      return "CAUTION";
   if (status == "MODERATE_RISK") return "WARNING";
   if (status == "HIGH_RISK")     return "DANGER";
   if (status == "SAFE" || status == "WARNING" || status == "DANGER") return status;

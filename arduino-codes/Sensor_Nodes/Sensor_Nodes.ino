@@ -9,7 +9,8 @@
    Change NODE_ID to 1, 2, or 3
    before uploading to each node
 --------------------------- */
-#define NODE_ID  3
+#define NODE_ID  1
+
 
 /* ---------------------------
    PIN DEFINITIONS
@@ -36,23 +37,18 @@ const int WaterValue = 0;    // wet reading
 /* ---------------------------
    THRESHOLDS
 --------------------------- */
-const int   SOIL_CAUTION = 50;
-const int   SOIL_WARNING = 67;
-const int   SOIL_DANGER  = 80;
+const int   SOIL_CAUTION = 101;
+const int   SOIL_WARNING = 101;
+const int   SOIL_DANGER  = 101;
 
-const float RAIN_CAUTION = 10.0;
-const float RAIN_WARNING = 20.0;
-const float RAIN_DANGER  = 25.0;
+const float RAIN_CAUTION = 999.0;
+const float RAIN_WARNING = 999.0;
+const float RAIN_DANGER  = 999.0;
 
 /* ---------------------------
    TRANSMISSION INTERVAL
-   Heartbeat : 5 minutes
-   Alert     : immediate
-   (adviser recommendation —
-   keep DB clean, send
-   immediately on abnormality)
 --------------------------- */
-const long INTERVAL = 300000; // 5 minutes in milliseconds
+const long INTERVAL = 300000; // 5 minutes
 
 /* ---------------------------
    OBJECTS & GLOBALS
@@ -117,7 +113,6 @@ void transmit(float temperature, float humidity, int soilPercent,
               float rain1Hour, String landslideRisk,
               String soilStatus, String rainStatus, bool isAlert) {
 
-  /* Payload: node,temp,humidity,soilPercent,rain,landslideRisk */
   String payload = String(NODE_ID)          + "," +
                    String(temperature, 2)   + "," +
                    String(humidity, 2)      + "," +
@@ -131,7 +126,7 @@ void transmit(float temperature, float humidity, int soilPercent,
 
   Serial.println("---------------------------");
   Serial.println(isAlert ? "*** ALERT — Sending immediately ***"
-                         : "Heartbeat — 5 minute interval reached");
+                         : "Heartbeat — interval reached");
   Serial.println("Payload Sent   : " + payload);
   Serial.println("Temperature    : " + String(temperature, 2) + " C");
   Serial.println("Humidity       : " + String(humidity, 2)    + " %");
@@ -171,6 +166,12 @@ void setup() {
   LoRa.setCodingRate4(5);
   LoRa.setSyncWord(0x12);
 
+ /* NODE 1 — no stagger delay, transmits first */
+  randomSeed(analogRead(A1));
+  long jitter = random(0, 3000);
+  delay(jitter);
+  lastSend = millis();
+
   Serial.println("---------------------------");
   Serial.println("SlopeGuard Sensor Node Ready");
   Serial.println("Node ID  : " + String(NODE_ID));
@@ -180,9 +181,6 @@ void setup() {
 
 /* ---------------------------
    MAIN LOOP
-   Checks every 1 second
-   Sends immediately on alert
-   Sends every 5min on normal
 --------------------------- */
 void loop() {
 
@@ -209,10 +207,7 @@ void loop() {
   String rainStatus    = getRainStatus(rain1Hour);
   String landslideRisk = getLandslideRisk(soilPercent, rain1Hour);
 
-  /* Alert if anything above NORMAL */
-  bool isAlert = (landslideRisk != "NORMAL");
-
-  /* Send immediately on alert OR when interval reached */
+  bool isAlert         = (landslideRisk != "NORMAL");
   bool intervalReached = (millis() - lastSend >= INTERVAL);
 
   if (isAlert || intervalReached) {
@@ -221,6 +216,5 @@ void loop() {
              soilStatus, rainStatus, isAlert);
   }
 
-  /* Check every 1 second */
   delay(1000);
 }
