@@ -1,4 +1,4 @@
-# SEISMO-SAFE v3.0
+# SlopeGuard
 ### Advanced Landslide Early Warning System
 
 A real-time landslide monitoring and early warning system built with IoT sensor nodes, LoRa wireless communication, PHP/MySQL backend, and a live web dashboard. Deployed on Hostinger shared hosting.
