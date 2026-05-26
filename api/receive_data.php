@@ -1,68 +1,69 @@
 <?php
 
+/* ============================================================
+   SlopeGuard — Receive Sensor Data
+   Called by: Master_Node.ino (ESP32)
+   Method: POST
+   Fields: node_id, temperature, humidity, soil_moisture,
+           rainfall, status
+============================================================ */
+
 include "../config/db.php";
 
 /* ---------------------------
-   GET SENSOR DATA
+   GET POST DATA
 --------------------------- */
-
-$node = $_POST['node_id'] ?? null;
-$temp = $_POST['temperature'] ?? null;
-$hum  = $_POST['humidity'] ?? null;
-$soil = $_POST['soil'] ?? null;
-$rain = $_POST['rain'] ?? null;
+$node   = $_POST['node_id']      ?? null;
+$temp   = $_POST['temperature']  ?? null;
+$hum    = $_POST['humidity']     ?? null;
+$soil   = $_POST['soil_moisture']?? null;
+$rain   = $_POST['rainfall']     ?? null;
+$status = $_POST['status']       ?? 'SAFE';
 
 /* ---------------------------
    VALIDATION
 --------------------------- */
-
-if(!$node){
-    echo "ERROR: Node ID missing";
-    exit;
+if (!$node) {
+  http_response_code(400);
+  echo "ERROR: Node ID missing";
+  exit;
 }
 
 /* ---------------------------
-   INSERT SENSOR DATA
+   INSERT SENSOR READING
 --------------------------- */
-
 $stmt = $conn->prepare("
-INSERT INTO sensor_readings
-(node_id, temperature, humidity, soil_moisture, rainfall)
-VALUES (?, ?, ?, ?, ?)
+  INSERT INTO sensor_readings
+  (node_id, temperature, humidity, soil_moisture, rainfall, status)
+  VALUES (?, ?, ?, ?, ?, ?)
 ");
-
-/* 
-i = integer
-d = decimal
-*/
-
-$stmt->bind_param("idiii",
-    $node,
-    $temp,
-    $hum,
-    $soil,
-    $rain
-);
-
+$stmt->bind_param("idddds", $node, $temp, $hum, $soil, $rain, $status);
 $stmt->execute();
 
 /* ---------------------------
    UPDATE NODE STATUS
 --------------------------- */
-
-$status = $conn->prepare("
-UPDATE sensor_nodes
-SET last_seen = NOW(), status='ACTIVE'
-WHERE id=?
+$upd = $conn->prepare("
+  UPDATE sensor_nodes
+  SET last_seen = NOW(), status = 'ACTIVE', alert = ?
+  WHERE id = ?
 ");
-
-$status->bind_param("i",$node);
-$status->execute();
+$upd->bind_param("si", $status, $node);
+$upd->execute();
 
 /* ---------------------------
-   RESPONSE
+   LOG ALERT HISTORY
+   Only on WARNING or DANGER
 --------------------------- */
+if ($status === 'WARNING' || $status === 'DANGER') {
+  $log = $conn->prepare("
+    INSERT INTO alert_history
+    (node_id, soil_moisture, rainfall, status)
+    VALUES (?, ?, ?, ?)
+  ");
+  $log->bind_param("idds", $node, $soil, $rain, $status);
+  $log->execute();
+}
 
 echo "DATA RECEIVED";
-
 ?>

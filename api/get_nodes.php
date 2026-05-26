@@ -1,19 +1,22 @@
 <?php
-include "../config/db.php";
+/* ============================================================
+   SlopeGuard — Get All Sensor Nodes
+   Used by: map.js
+============================================================ */
 
-$q = $conn->query("
-  SELECT n.*, 
-  (SELECT alert_level 
-   FROM alerts 
-   WHERE node_id=n.id 
-   ORDER BY created_at DESC 
-   LIMIT 1) as alert
-  FROM sensor_nodes n
+include "../config/db.php";
+header("Content-Type: application/json");
+
+$result = $conn->query("
+  SELECT id, node_name, latitude, longitude, location, status, alert, last_seen
+  FROM sensor_nodes
+  ORDER BY id ASC
 ");
 
 $nodes = [];
-while($r = $q->fetch_assoc()){
-  $nodes[] = $r;
+while ($row = $result->fetch_assoc()) {
+  $nodes[] = $row;
 }
 
 echo json_encode($nodes);
+?>
