@@ -29,8 +29,8 @@ HardwareSerial sim900(2);
    WIFI CREDENTIALS
    Change before deploying
 --------------------------- */
-const char* ssid     = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid     = "NBSC";
+const char* password = "Nbsc@2k25";
 
 /* ---------------------------
    SERVER URL
@@ -39,7 +39,7 @@ const char* password = "YOUR_WIFI_PASSWORD";
    Example:
    "http://yourdomain.com/slopeguard/api/receive_data.php"
 --------------------------- */
-const char* serverURL = "http://YOUR_HOSTING_DOMAIN/slopeguard/api/receive_data.php";
+const char* serverURL = "http://ics-dev.io/slopeguard/api/receive_data.php";
 
 /* ---------------------------
    SMS SETTINGS
