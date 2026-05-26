@@ -3,11 +3,6 @@
 -- Import this file in phpMyAdmin or via MySQL CLI
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS `slopeguard`
-  DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_general_ci;
-
-USE `slopeguard`;
 
 -- ============================================================
 -- SENSOR NODES

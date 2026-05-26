@@ -61,7 +61,7 @@
   <header class="topbar">
     <div class="topbar-left">
       <h1>Sensor Map</h1>
-      <p>Live node locations &amp; alert status &mdash; Davao Region</p>
+      <p>Live node locations &amp; alert status &mdash; Manolo Fortich, Bukidnon</p>
     </div>
     <div class="topbar-right">
       <div class="topbar-time">
