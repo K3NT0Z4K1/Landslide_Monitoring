@@ -6,41 +6,19 @@ $node = isset($_GET['node']) ? (int)$_GET['node'] : 1;
 if ($node < 1 || $node > 3) $node = 1;
 
 /* Latest reading */
-$stmt = $conn->prepare("
-  SELECT * FROM sensor_readings
-  WHERE node_id = ? ORDER BY created_at DESC LIMIT 1
-");
+$stmt = $conn->prepare("SELECT * FROM sensor_readings WHERE node_id = ? ORDER BY created_at DESC LIMIT 1");
 $stmt->bind_param("i", $node);
 $stmt->execute();
 $latest = $stmt->get_result()->fetch_assoc();
 
 /* Last 10 readings for table */
-$stmt2 = $conn->prepare("
-  SELECT temperature, humidity, soil_moisture, rainfall, status, created_at
-  FROM sensor_readings
-  WHERE node_id = ? ORDER BY created_at DESC LIMIT 10
-");
+$stmt2 = $conn->prepare("SELECT temperature, humidity, soil_moisture, rainfall, status, created_at FROM sensor_readings WHERE node_id = ? ORDER BY created_at DESC LIMIT 10");
 $stmt2->bind_param("i", $node);
 $stmt2->execute();
 $readings = $stmt2->get_result();
 
-/* Alert history last 100 */
-$alertHistory = $conn->query("
-  SELECT ah.*, n.node_name
-  FROM alert_history ah
-  LEFT JOIN sensor_nodes n ON n.id = ah.node_id
-  ORDER BY ah.created_at DESC
-  LIMIT 100
-");
-
 /* Alert counts */
-$counts = $conn->query("
-  SELECT
-    COUNT(*) AS total,
-    SUM(status = 'DANGER')  AS danger_count,
-    SUM(status = 'WARNING') AS warning_count
-  FROM alert_history
-")->fetch_assoc();
+$counts = $conn->query("SELECT COUNT(*) AS total, SUM(status='DANGER') AS danger_count, SUM(status='WARNING') AS warning_count FROM alert_history")->fetch_assoc();
 
 $soil   = $latest['soil_moisture'] ?? 0;
 $rain   = $latest['rainfall']      ?? 0;
@@ -54,12 +32,7 @@ $alert_msg   = $status === 'DANGER'
     ? 'Elevated soil moisture and rainfall detected. Monitor closely.'
     : 'All sensor readings are within safe thresholds.');
 
-$node_labels = [
-  1 => "Node 1 — Lower Slope A",
-  2 => "Node 2 — Lower Slope B",
-  3 => "Node 3 — Lower Slope C"
-];
-
+$node_labels = [1=>"Node 1 — Lower Slope A",2=>"Node 2 — Lower Slope B",3=>"Node 3 — Lower Slope C"];
 $unread_alerts = $counts['total'] ?? 0;
 ?>
 <!DOCTYPE html>
@@ -83,11 +56,11 @@ $unread_alerts = $counts['total'] ?? 0;
       <defs><clipPath id="sc2"><path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z"/></clipPath></defs>
       <path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z" fill="#0d2a2b" stroke="#0e9fa0" stroke-width="2.5"/>
       <g clip-path="url(#sc2)" opacity="0.65">
-        <line x1="0"   y1="96"  x2="96"  y2="0"   stroke="#0e9fa0" stroke-width="7"/>
-        <line x1="8"   y1="104" x2="104" y2="8"   stroke="#1ab8a0" stroke-width="6"/>
-        <line x1="-8"  y1="88"  x2="88"  y2="-8"  stroke="#0a7a7b" stroke-width="6"/>
-        <line x1="16"  y1="112" x2="112" y2="16"  stroke="#0e9fa0" stroke-width="5"/>
-        <line x1="-16" y1="80"  x2="80"  y2="-16" stroke="#0a7a7b" stroke-width="4"/>
+        <line x1="0" y1="96" x2="96" y2="0" stroke="#0e9fa0" stroke-width="7"/>
+        <line x1="8" y1="104" x2="104" y2="8" stroke="#1ab8a0" stroke-width="6"/>
+        <line x1="-8" y1="88" x2="88" y2="-8" stroke="#0a7a7b" stroke-width="6"/>
+        <line x1="16" y1="112" x2="112" y2="16" stroke="#0e9fa0" stroke-width="5"/>
+        <line x1="-16" y1="80" x2="80" y2="-16" stroke="#0a7a7b" stroke-width="4"/>
       </g>
       <g clip-path="url(#sc2)">
         <polygon points="32,74 48,42 64,74" fill="#0d2a2b" opacity="0.96"/>
@@ -102,6 +75,7 @@ $unread_alerts = $counts['total'] ?? 0;
       <span>Early Warning System</span>
     </div>
   </div>
+
   <nav class="sidebar-nav">
     <span class="nav-section-label">Main</span>
     <a href="index.php?node=<?= $node ?>" class="nav-item active">
@@ -116,7 +90,16 @@ $unread_alerts = $counts['total'] ?? 0;
         <span class="nav-alert-count"><?= $unread_alerts ?></span>
       <?php endif; ?>
     </a>
+
+    <span class="nav-section-label">Tools</span>
+    <a href="serial.php?node=<?= $node ?>" class="nav-item">
+      <i class='bx bx-terminal'></i> Serial Monitor
+    </a>
+    <a href="readings_summary.php?node=<?= $node ?>" class="nav-item">
+      <i class='bx bx-bar-chart-alt-2'></i> Readings Summary
+    </a>
   </nav>
+
   <div class="sidebar-footer">
     <a href="../auth/logout.php" class="logout-btn">
       <i class='bx bx-log-out'></i> Sign Out
@@ -126,7 +109,6 @@ $unread_alerts = $counts['total'] ?? 0;
 
 <!-- MAIN -->
 <div class="main">
-
   <header class="topbar">
     <div class="topbar-left">
       <h1>Dashboard</h1>
@@ -148,7 +130,6 @@ $unread_alerts = $counts['total'] ?? 0;
     </div>
   </header>
 
-  <!-- ALERT BANNER -->
   <div class="alert-banner <?= $alert_class ?> fade-in">
     <span class="alert-pulse"></span>
     <i class='bx <?= $alert_icon ?>'></i>
@@ -218,24 +199,13 @@ $unread_alerts = $counts['total'] ?? 0;
         <div class="panel-title"><i class='bx bx-table'></i> Recent Sensor Readings</div>
         <div class="export-wrap">
           <span class="panel-badge teal">Last 10 entries</span>
-          <button class="export-btn" onclick="exportData('csv')">
-            <i class='bx bx-download'></i> CSV
-          </button>
-          <button class="export-btn" onclick="exportData('json')">
-            <i class='bx bx-code-alt'></i> JSON
-          </button>
+          <button class="export-btn" onclick="exportData('csv')"><i class='bx bx-download'></i> CSV</button>
+          <button class="export-btn" onclick="exportData('json')"><i class='bx bx-code-alt'></i> JSON</button>
         </div>
       </div>
       <table class="data-table">
         <thead>
-          <tr>
-            <th>Date &amp; Time</th>
-            <th>Temp (°C)</th>
-            <th>Humidity (%)</th>
-            <th>Soil (%)</th>
-            <th>Rainfall (mm)</th>
-            <th>Status</th>
-          </tr>
+          <tr><th>Date &amp; Time</th><th>Temp (°C)</th><th>Humidity (%)</th><th>Soil (%)</th><th>Rainfall (mm)</th><th>Status</th></tr>
         </thead>
         <tbody>
           <?php while ($row = $readings->fetch_assoc()):
@@ -265,62 +235,38 @@ $unread_alerts = $counts['total'] ?? 0;
 
 <script>
 const NODE_ID = <?= $node ?>;
+setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8); }, 1000);
 
-/* Clock */
-setInterval(() => {
-  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
-}, 1000);
-
-/* Live data refresh */
 function loadLive() {
-  fetch('../api/get_latest.php?node=' + NODE_ID)
-    .then(r => r.json())
-    .then(d => {
-      if (!d) return;
-      document.getElementById('temp').textContent     = parseFloat(d.temperature).toFixed(1);
-      document.getElementById('humidity').textContent = parseFloat(d.humidity).toFixed(1);
-      document.getElementById('soil').textContent     = d.soil_moisture;
-      document.getElementById('rain').textContent     = parseFloat(d.rainfall).toFixed(2);
-      document.getElementById('risk').textContent     = d.status;
-    })
-    .catch(e => console.error(e));
+  fetch('../api/get_latest.php?node=' + NODE_ID).then(r => r.json()).then(d => {
+    if (!d) return;
+    document.getElementById('temp').textContent     = parseFloat(d.temperature).toFixed(1);
+    document.getElementById('humidity').textContent = parseFloat(d.humidity).toFixed(1);
+    document.getElementById('soil').textContent     = d.soil_moisture;
+    document.getElementById('rain').textContent     = parseFloat(d.rainfall).toFixed(2);
+    document.getElementById('risk').textContent     = d.status;
+  }).catch(e => console.error(e));
 }
-
 setInterval(loadLive, 5000);
 
-/* Export */
-let readingsCache = [];
-
 function exportData(format) {
-  fetch('../api/get_history.php?node=' + NODE_ID + '&limit=20')
-    .then(r => r.json())
-    .then(data => {
-      const date = new Date().toISOString().slice(0,10);
-      const filename = 'slopeguard_node' + NODE_ID + '_' + date;
-
-      if (format === 'csv') {
-        let csv = 'Date & Time,Temperature (°C),Humidity (%),Soil Moisture (%),Rainfall (mm),Status\n';
-        data.forEach(r => {
-          csv += `"${r.datetime}",${r.temperature},${r.humidity},${r.soil_moisture},${r.rainfall},${r.status}\n`;
-        });
-        download(csv, filename + '.csv', 'text/csv');
-      } else {
-        download(JSON.stringify(data, null, 2), filename + '.json', 'application/json');
-      }
-    });
+  fetch('../api/get_history.php?node=' + NODE_ID + '&limit=20').then(r => r.json()).then(data => {
+    const date = new Date().toISOString().slice(0,10);
+    const filename = 'slopeguard_node' + NODE_ID + '_' + date;
+    if (format === 'csv') {
+      let csv = 'Date & Time,Temperature (°C),Humidity (%),Soil Moisture (%),Rainfall (mm),Status\n';
+      data.forEach(r => { csv += `"${r.datetime}",${r.temperature},${r.humidity},${r.soil_moisture},${r.rainfall},${r.status}\n`; });
+      download(csv, filename + '.csv', 'text/csv');
+    } else { download(JSON.stringify(data, null, 2), filename + '.json', 'application/json'); }
+  });
 }
-
 function download(content, filename, mime) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([content], { type: mime }));
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 }
 </script>
-
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="../assets/js/charts.js"></script>
-
 </body>
 </html>
