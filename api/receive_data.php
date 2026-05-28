@@ -5,7 +5,7 @@
    Called by: Master_Node.ino (ESP32)
    Method: POST
    Fields: node_id, temperature, humidity, soil_moisture,
-           rainfall, status
+           rainfall, status, rssi, raw_packet
 ============================================================ */
 
 include "../config/db.php";
@@ -13,12 +13,14 @@ include "../config/db.php";
 /* ---------------------------
    GET POST DATA
 --------------------------- */
-$node   = $_POST['node_id']      ?? null;
-$temp   = $_POST['temperature']  ?? null;
-$hum    = $_POST['humidity']     ?? null;
-$soil   = $_POST['soil_moisture']?? null;
-$rain   = $_POST['rainfall']     ?? null;
-$status = $_POST['status']       ?? 'SAFE';
+$node      = $_POST['node_id']      ?? null;
+$temp      = $_POST['temperature']  ?? null;
+$hum       = $_POST['humidity']     ?? null;
+$soil      = $_POST['soil_moisture']?? null;
+$rain      = $_POST['rainfall']     ?? null;
+$status    = $_POST['status']       ?? 'SAFE';
+$rssi      = isset($_POST['rssi'])       ? (int)$_POST['rssi']  : null;
+$rawPacket = isset($_POST['raw_packet']) ? $_POST['raw_packet']  : null;
 
 /* ---------------------------
    VALIDATION
@@ -34,11 +36,12 @@ if (!$node) {
 --------------------------- */
 $stmt = $conn->prepare("
   INSERT INTO sensor_readings
-  (node_id, temperature, humidity, soil_moisture, rainfall, status)
-  VALUES (?, ?, ?, ?, ?, ?)
+  (node_id, temperature, humidity, soil_moisture, rainfall, status, rssi, raw_packet)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ");
-$stmt->bind_param("idddds", $node, $temp, $hum, $soil, $rain, $status);
+$stmt->bind_param("iddddsis", $node, $temp, $hum, $soil, $rain, $status, $rssi, $rawPacket);
 $stmt->execute();
+
 
 /* ---------------------------
    UPDATE NODE STATUS
