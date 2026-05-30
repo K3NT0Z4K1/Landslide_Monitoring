@@ -718,36 +718,57 @@ body {
    READINGS SUMMARY PAGE
 ============================================================ */
 
-/* Averages grid inside panel */
+/* Averages grid — always 6 equal columns, never collapses */
 .summary-averages-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   border-top: 1px solid var(--border2);
+  overflow-x: auto;
 }
+
+@media (max-width: 1100px) {
+  .summary-averages-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .summary-averages-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 .avg-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 22px 16px;
+  justify-content: center;
+  padding: 24px 12px;
   text-align: center;
   border-right: 1px solid var(--border2);
+  gap: 0;
 }
-.avg-item:last-child { border-right: none; }
-.avg-item i { font-size: 22px; color: var(--muted); margin-bottom: 8px; }
+.avg-item:nth-child(6)  { border-right: none; }
+.avg-item:nth-child(3)  { border-right: none; }  /* for 3-col breakpoint */
+
+.avg-item i {
+  font-size: 20px;
+  color: var(--t400);
+  margin-bottom: 10px;
+  display: block;
+}
+
 .avg-val {
-  font-size: 22px;
-  font-weight: 300;
+  font-size: 20px;
+  font-weight: 400;
   font-family: 'DM Mono', monospace;
   color: var(--text);
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
+
 .avg-lbl {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--muted);
   margin-top: 5px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* Runs table */
