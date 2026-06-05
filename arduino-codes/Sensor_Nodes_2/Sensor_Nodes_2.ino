@@ -21,9 +21,8 @@
 
 /* ---------------------------
    LORA SETTINGS
-   Must match Master Node
 --------------------------- */
-#define LORA_FREQ 915E6
+#define LORA_FREQ 433E6
 
 /* ---------------------------
    SOIL CALIBRATION
@@ -46,7 +45,7 @@ const float RAIN_DANGER  = 30.0;
    TRANSMISSION INTERVAL
    300000 = 5 minutes
 --------------------------- */
-const long INTERVAL = 30000;
+const long INTERVAL = 20000;
 
 /* ---------------------------
    OBJECTS & GLOBALS
@@ -163,12 +162,12 @@ void setup() {
   LoRa.setSignalBandwidth(125E3);
   LoRa.setCodingRate4(5);
   LoRa.setSyncWord(0x12);
-  LoRa.enableCrc();           // FIX 1: added — master requires this
+  LoRa.enableCrc();           // required — must match master
 
   /* NODE 2 — 15 second stagger + jitter */
   randomSeed(analogRead(A1));
   long jitter = random(0, 3000);
-  Serial.println("Node 2 stagger delay — waiting...");
+  Serial.println("Node 2 stagger — waiting 15s...");
   delay(15000 + jitter);
   lastSend = millis();
 

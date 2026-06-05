@@ -1,3 +1,6 @@
+
+// const char* ssid     = "Fiber@Home2.4Ggs";
+// const char* password = "Jesus143";
 #include <SPI.h>
 #include <LoRa.h>
 #include <WiFi.h>
@@ -26,8 +29,8 @@ HardwareSerial sim900(2);
 /* ---------------------------
    WIFI CREDENTIALS
 --------------------------- */
-const char* ssid     = "NBSC";
-const char* password = "Nbsc@2k25";
+const char* ssid     = "Fiber@Home2.4Ggs";
+const char* password = "Jesus143";
 
 /* ---------------------------
    SERVER URL
@@ -99,7 +102,7 @@ void setup() {
 
   /* LoRa */
   LoRa.setPins(NSS, RST, DIO0);
-  if (!LoRa.begin(915E6)) {
+  if (!LoRa.begin(433E6)) {
     Serial.println("LoRa Failed!");
     while (1);
   }
@@ -121,14 +124,33 @@ void setup() {
 --------------------------- */
 void loop() {
 
-  /* Reconnect WiFi if dropped */
+  /* ---------------------------
+     WIFI RECONNECT
+     Only call begin() when fully
+     disconnected — not while still
+     attempting to connect
+  --------------------------- */
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi lost — reconnecting...");
-    WiFi.begin(ssid, password);
-    int w = 0;
-    while (WiFi.status() != WL_CONNECTED && w < 10) {
+    if (WiFi.status() == WL_DISCONNECTED) {
+      Serial.println("WiFi lost — reconnecting...");
+      WiFi.disconnect();
       delay(500);
-      w++;
+      WiFi.begin(ssid, password);
+      int w = 0;
+      while (WiFi.status() != WL_CONNECTED && w < 20) {
+        delay(500);
+        w++;
+      }
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("WiFi reconnected");
+        Serial.print("IP: ");
+        Serial.println(WiFi.localIP());
+      } else {
+        Serial.println("WiFi reconnect failed — will retry next loop");
+      }
+    } else {
+      /* Still connecting from previous attempt — just wait */
+      delay(500);
     }
   }
 
@@ -301,8 +323,6 @@ void sendSMSAlert(int node, int soil, float rain, String status) {
 /* ---------------------------
    SEND TO PHP SERVER
    Includes RSSI and raw packet
-   for signal monitoring and
-   debugging on the dashboard
 --------------------------- */
 void sendToServer(int node, float t, float h, int s, float r, String status, String rawData) {
   if (WiFi.status() != WL_CONNECTED) {

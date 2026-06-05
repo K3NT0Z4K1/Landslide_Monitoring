@@ -26,12 +26,12 @@
    LORA SETTINGS
    Must match Master Node
 --------------------------- */
-#define LORA_FREQ 915E6
+#define LORA_FREQ 433E6
 
 /* ---------------------------
    SOIL CALIBRATION
 --------------------------- */
-const int AirValue   = 618;
+const int AirValue   = 630;
 const int WaterValue = 155;
 
 /* ---------------------------

@@ -26,29 +26,29 @@
    LORA SETTINGS
    Must match Master Node
 --------------------------- */
-#define LORA_FREQ 915E6
+#define LORA_FREQ 433E6
 
 /* ---------------------------
    SOIL CALIBRATION
 --------------------------- */
-const int AirValue   = 570;  // dry reading
-const int WaterValue = 0;    // wet reading
+const int AirValue   = 630;
+const int WaterValue = 155;
 
 /* ---------------------------
    THRESHOLDS
 --------------------------- */
-const int   SOIL_CAUTION = 101;
-const int   SOIL_WARNING = 101;
-const int   SOIL_DANGER  = 101;
+const int   SOIL_CAUTION = 55;
+const int   SOIL_WARNING = 70;
+const int   SOIL_DANGER  = 80;
 
-const float RAIN_CAUTION = 999.0;
-const float RAIN_WARNING = 999.0;
-const float RAIN_DANGER  = 999.0;
+const float RAIN_CAUTION = 7.5;
+const float RAIN_WARNING = 15.0;
+const float RAIN_DANGER  = 30.0;
 
 /* ---------------------------
    TRANSMISSION INTERVAL
 --------------------------- */
-const long INTERVAL = 300000; // 5 minutes
+const long INTERVAL = 20000; // 5 minutes
 
 /* ---------------------------
    OBJECTS & GLOBALS
