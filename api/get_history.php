@@ -22,7 +22,7 @@ $sql = "
     soil_moisture,
     rainfall,
     status,
-    DATE_FORMAT(created_at, '%H:%i') AS time,
+    DATE_FORMAT(created_at, '%H:%i:%s') AS time,
     created_at AS datetime
   FROM sensor_readings
   WHERE node_id = ?
