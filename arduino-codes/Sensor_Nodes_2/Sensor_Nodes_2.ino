@@ -45,7 +45,7 @@ const float RAIN_DANGER  = 30.0;
    TRANSMISSION INTERVAL
    300000 = 5 minutes
 --------------------------- */
-const long INTERVAL = 20000;
+const long INTERVAL = 300000;
 
 /* ---------------------------
    OBJECTS & GLOBALS
