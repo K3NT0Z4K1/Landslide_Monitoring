@@ -95,7 +95,7 @@ $unread_alerts = $counts['total'] ?? 0;
     .ide-wrap--inline {
       margin: 0 !important;
       min-height: 0;
-      height: 100%;
+      height: 400px;
       display: flex;
       flex-direction: column;
     }
