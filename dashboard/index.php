@@ -46,6 +46,89 @@ $unread_alerts = $counts['total'] ?? 0;
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* ── Dashboard top row: stat cards + serial monitor side by side ── */
+    .dashboard-top-row {
+      display: grid;
+      grid-template-columns: 480px 1fr;
+      gap: 18px;
+      align-items: stretch;
+      min-height: 360px;
+    }
+
+    /* 5 stat cards stacked in a column */
+   .stat-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-self: start;  /* add this — stops the column from stretching to match serial height */
+    }
+
+    .stat-col .stat-card {
+      padding: 12px 16px;
+      border-radius: var(--r);
+    }
+
+    .stat-col .stat-card::before {
+      border-radius: var(--r) var(--r) 0 0;
+    }
+
+    .stat-col .stat-label {
+      margin-bottom: 4px;
+      font-size: 10px;
+    }
+
+    .stat-col .stat-value {
+      font-size: 22px;
+    }
+
+    .stat-col .stat-value.risk {
+      font-size: 14px;
+    }
+
+    .stat-col .stat-unit {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    /* Inline serial monitor fills the right column */
+    .ide-wrap--inline {
+      margin: 0 !important;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ide-wrap--inline .ide-output {
+      font-size: 11.5px;
+      line-height: 1.6;
+    }
+
+    .ide-wrap--inline .ide-line {
+      padding: 0 12px;
+      min-height: 19px;
+    }
+
+    .ide-wrap--inline .ide-ts {
+      min-width: 54px;
+      width: 54px;
+      font-size: 10px;
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-top-row {
+        grid-template-columns: 1fr;
+      }
+      .stat-col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      }
+      .ide-wrap--inline {
+        height: 320px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -82,34 +165,116 @@ $unread_alerts = $counts['total'] ?? 0;
 
   <div class="page-content">
 
-    <!-- STAT CARDS -->
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-label"><i class='bx bx-thermometer'></i> Temperature</div>
-        <div class="stat-value" id="temp"><?= $latest['temperature'] ?? '--' ?></div>
-        <div class="stat-unit">Degrees Celsius (°C)</div>
+    <!-- STAT CARDS + SERIAL MONITOR -->
+    <div class="dashboard-top-row">
+
+      <!-- STAT CARDS (stacked vertically, 5 cards) -->
+      <div class="stat-col">
+        <div class="stat-card">
+          <div class="stat-label"><i class='bx bx-thermometer'></i> Temperature</div>
+          <div class="stat-value" id="temp"><?= $latest['temperature'] ?? '--' ?></div>
+          <div class="stat-unit">Degrees Celsius (°C)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><i class='bx bx-droplet'></i> Humidity</div>
+          <div class="stat-value" id="humidity"><?= $latest['humidity'] ?? '--' ?></div>
+          <div class="stat-unit">Relative Humidity (%)</div>
+        </div>
+        <div class="stat-card <?= $soil > 80 ? 'danger-card' : ($soil > 50 ? 'warn-card' : 'ok-card') ?>">
+          <div class="stat-label"><i class='bx bx-landscape'></i> Soil Moisture</div>
+          <div class="stat-value <?= $soil > 80 ? 'danger' : ($soil > 50 ? 'warn' : 'ok') ?>" id="soil"><?= $latest['soil_moisture'] ?? '--' ?></div>
+          <div class="stat-unit">Percentage (%)</div>
+        </div>
+        <div class="stat-card <?= $rain > 25 ? 'danger-card' : ($rain > 10 ? 'warn-card' : 'ok-card') ?>">
+          <div class="stat-label"><i class='bx bx-cloud-rain'></i> Rainfall</div>
+          <div class="stat-value <?= $rain > 25 ? 'danger' : ($rain > 10 ? 'warn' : 'ok') ?>" id="rain"><?= $latest['rainfall'] ?? '--' ?></div>
+          <div class="stat-unit">Millimeters / hour (mm)</div>
+        </div>
+        <div class="stat-card <?= $alert_class === 'danger' ? 'danger-card' : ($alert_class === 'warning' ? 'warn-card' : 'ok-card') ?>">
+          <div class="stat-label"><i class='bx bx-shield-quarter'></i> Landslide Risk</div>
+          <div class="stat-value risk <?= $alert_class === 'danger' ? 'danger' : ($alert_class === 'warning' ? 'warn' : 'ok') ?>" id="risk"><?= $status ?></div>
+          <div class="stat-unit"><?= $node_labels[$node] ?></div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label"><i class='bx bx-droplet'></i> Humidity</div>
-        <div class="stat-value" id="humidity"><?= $latest['humidity'] ?? '--' ?></div>
-        <div class="stat-unit">Relative Humidity (%)</div>
-      </div>
-      <div class="stat-card <?= $soil > 80 ? 'danger-card' : ($soil > 50 ? 'warn-card' : 'ok-card') ?>">
-        <div class="stat-label"><i class='bx bx-landscape'></i> Soil Moisture</div>
-        <div class="stat-value <?= $soil > 80 ? 'danger' : ($soil > 50 ? 'warn' : 'ok') ?>" id="soil"><?= $latest['soil_moisture'] ?? '--' ?></div>
-        <div class="stat-unit">Percentage (%)</div>
-      </div>
-      <div class="stat-card <?= $rain > 25 ? 'danger-card' : ($rain > 10 ? 'warn-card' : 'ok-card') ?>">
-        <div class="stat-label"><i class='bx bx-cloud-rain'></i> Rainfall</div>
-        <div class="stat-value <?= $rain > 25 ? 'danger' : ($rain > 10 ? 'warn' : 'ok') ?>" id="rain"><?= $latest['rainfall'] ?? '--' ?></div>
-        <div class="stat-unit">Millimeters / hour (mm)</div>
-      </div>
-      <div class="stat-card <?= $alert_class === 'danger' ? 'danger-card' : ($alert_class === 'warning' ? 'warn-card' : 'ok-card') ?>">
-        <div class="stat-label"><i class='bx bx-shield-quarter'></i> Landslide Risk</div>
-        <div class="stat-value risk <?= $alert_class === 'danger' ? 'danger' : ($alert_class === 'warning' ? 'warn' : 'ok') ?>" id="risk"><?= $status ?></div>
-        <div class="stat-unit"><?= $node_labels[$node] ?></div>
-      </div>
-    </div>
+
+      <!-- INLINE SERIAL MONITOR -->
+      <div class="ide-wrap ide-wrap--inline">
+
+        <!-- Title bar -->
+        <div class="ide-titlebar">
+          <div class="ide-titlebar-left">
+            <div class="ide-dot red"></div>
+            <div class="ide-dot yellow"></div>
+            <div class="ide-dot green"></div>
+            <span class="ide-title-text">Serial Monitor</span>
+          </div>
+          <div class="ide-titlebar-right">
+            <span class="ide-port-chip">
+              <i class='bx bx-usb'></i>
+              COM3 / Master Node
+            </span>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="ide-toolbar">
+          <div class="ide-toolbar-left">
+            <label class="ide-check-label">
+              <input type="checkbox" id="autoscrollCheck" checked>
+              <span>Autoscroll</span>
+            </label>
+            <label class="ide-check-label">
+              <input type="checkbox" id="timestampCheck" checked>
+              <span>Timestamp</span>
+            </label>
+          </div>
+          <div class="ide-toolbar-right">
+            <div class="ide-live-chip" id="liveChip">
+              <span class="ide-live-dot" id="liveDot"></span>
+              <span id="liveLabel">Live</span>
+            </div>
+            <button class="ide-btn" onclick="togglePause()" title="Pause / Resume">
+              <i class='bx bx-pause' id="pauseIcon"></i>
+            </button>
+            <button class="ide-btn" onclick="clearMonitor()" title="Clear">
+              <i class='bx bx-trash'></i>
+            </button>
+            <button class="ide-btn" onclick="downloadLog()" title="Save log">
+              <i class='bx bx-download'></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable output -->
+        <div class="ide-output" id="ideOutput">
+          <div class="ide-line sys">
+            <span class="ide-ts">--:--:--</span>
+            <span class="ide-txt">SlopeGuard Serial Monitor ready...</span>
+          </div>
+          <div class="ide-line sys">
+            <span class="ide-ts">--:--:--</span>
+            <span class="ide-txt">Waiting for LoRa packets...</span>
+          </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="ide-statusbar">
+          <span id="lineCountEl">0 lines</span>
+          <span class="ide-status-sep">|</span>
+          <span id="lastRxEl">No data received</span>
+          <span class="ide-status-sep">|</span>
+          <span>Node <?= $node ?></span>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+            <span class="ide-status-sep">|</span>
+            <span id="rxCountEl">RX: 0</span>
+            <span class="ide-status-sep">|</span>
+            <span>115200 baud</span>
+          </div>
+        </div>
+
+      </div><!-- /ide-wrap--inline -->
+
+    </div><!-- /dashboard-top-row -->
 
     <!-- CHARTS -->
     <div class="two-col">
@@ -212,5 +377,139 @@ function download(content, filename, mime) {
 </script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="../assets/js/charts.js"></script>
+
+<script>
+/* ── Inline Serial Monitor ── */
+let serialPaused    = false;
+let serialLastId    = 0;
+let serialLineCount = 0;
+let serialRxCount   = 0;
+let serialLogBuffer = [];
+const SERIAL_MAX_LINES = 400;
+
+function togglePause() {
+  serialPaused = !serialPaused;
+  document.getElementById('pauseIcon').className = serialPaused ? 'bx bx-play' : 'bx bx-pause';
+  document.getElementById('liveLabel').textContent = serialPaused ? 'Paused' : 'Live';
+  const chip = document.getElementById('liveChip');
+  const dot  = document.getElementById('liveDot');
+  chip.style.color       = serialPaused ? '#d97706' : '';
+  chip.style.borderColor = serialPaused ? 'rgba(217,119,6,0.3)' : '';
+  chip.style.background  = serialPaused ? 'rgba(217,119,6,0.1)' : '';
+  dot.style.background   = serialPaused ? '#d97706' : '';
+  dot.style.animationPlayState = serialPaused ? 'paused' : 'running';
+}
+
+function clearMonitor() {
+  document.getElementById('ideOutput').innerHTML = '';
+  serialLogBuffer = []; serialLineCount = 0; serialRxCount = 0;
+  updateSerialStatus();
+}
+
+function downloadLog() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([serialLogBuffer.join('\n')], { type: 'text/plain' }));
+  a.download = 'slopeguard_serial_node' + NODE_ID + '_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.txt';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function updateSerialStatus() {
+  document.getElementById('lineCountEl').textContent = serialLineCount + ' lines';
+  document.getElementById('rxCountEl').textContent   = 'RX: ' + serialRxCount;
+}
+
+function buildSerialLines(row) {
+  const t    = parseFloat(row.temperature).toFixed(2);
+  const h    = parseFloat(row.humidity).toFixed(2);
+  const s    = row.soil_moisture;
+  const r    = parseFloat(row.rainfall).toFixed(2);
+  const st   = row.status;
+  const rssi = (row.rssi !== null && row.rssi !== undefined && row.rssi !== '') ? row.rssi : 'N/A';
+  const raw  = row.raw_packet || `${row.node_id},${t},${h},${s},${r},${st}`;
+  const stCls = st === 'DANGER' ? 'danger' : (st === 'WARNING' ? 'warn' : 'safe');
+  return [
+    { cls: 'sep',   txt: '--------------------' },
+    { cls: 'recv',  txt: `Received : ${raw}` },
+    { cls: 'meta',  txt: `RSSI     : ${rssi}` },
+    { cls: 'field', txt: `Node ID  : ${row.node_id}` },
+    { cls: 'field', txt: `Temp     : ${t} C` },
+    { cls: 'field', txt: `Humidity : ${h} %` },
+    { cls: 'field', txt: `Soil     : ${s}%` },
+    { cls: 'field', txt: `Rain     : ${r} mm` },
+    { cls: stCls,   txt: `Status   : ${st}` },
+    { cls: 'sys',   txt: 'Sending to server...' },
+    { cls: 'ok',    txt: 'HTTP Response : 200' },
+    { cls: 'ok',    txt: 'Server reply  : OK' },
+  ];
+}
+
+function appendSerialEntries(entries) {
+  if (!entries.length) return;
+  const output     = document.getElementById('ideOutput');
+  const showTs     = document.getElementById('timestampCheck').checked;
+  const autoscroll = document.getElementById('autoscrollCheck').checked;
+
+  output.querySelectorAll('.ide-line.sys').forEach(el => {
+    if (el.querySelector('.ide-ts')?.textContent === '--:--:--') el.remove();
+  });
+
+  entries.forEach(row => {
+    const ts = row.time || '--:--:--';
+    serialRxCount++;
+    buildSerialLines(row).forEach(l => {
+      const div = document.createElement('div');
+      div.className = `ide-line ${l.cls} new`;
+      const tsEl = document.createElement('span');
+      tsEl.className = 'ide-ts';
+      tsEl.textContent = ts;
+      tsEl.style.display = showTs ? '' : 'none';
+      const txtEl = document.createElement('span');
+      txtEl.className = 'ide-txt';
+      txtEl.textContent = l.txt;
+      div.appendChild(tsEl);
+      div.appendChild(txtEl);
+      output.appendChild(div);
+      setTimeout(() => div.classList.remove('new'), 500);
+      serialLogBuffer.push((showTs ? `[${ts}]  ` : '') + l.txt);
+      serialLineCount++;
+      while (output.children.length > SERIAL_MAX_LINES) output.removeChild(output.firstChild);
+    });
+    document.getElementById('lastRxEl').textContent = 'Last RX: ' + new Date().toTimeString().slice(0,8);
+  });
+
+  updateSerialStatus();
+  if (autoscroll && !serialPaused) output.scrollTop = output.scrollHeight;
+}
+
+document.getElementById('timestampCheck').addEventListener('change', function() {
+  document.querySelectorAll('#ideOutput .ide-ts').forEach(el => {
+    el.style.display = this.checked ? '' : 'none';
+  });
+});
+
+function serialPoll() {
+  if (serialPaused) return;
+  fetch('../api/get_serial_log.php?node=' + NODE_ID + '&after_id=' + serialLastId + '&limit=20')
+    .then(r => r.json())
+    .then(rows => {
+      if (!Array.isArray(rows) || !rows.length) return;
+      serialLastId = rows[rows.length - 1].id || serialLastId;
+      appendSerialEntries(rows);
+    }).catch(() => {});
+}
+
+function serialInit() {
+  fetch('../api/get_serial_log.php?node=' + NODE_ID + '&limit=20')
+    .then(r => r.json())
+    .then(rows => {
+      if (!Array.isArray(rows) || !rows.length) return;
+      serialLastId = rows[rows.length - 1].id || 0;
+      appendSerialEntries(rows);
+    }).catch(() => {});
+}
+
+serialInit();
+setInterval(serialPoll, 5000);
+</script>
 </body>
 </html>

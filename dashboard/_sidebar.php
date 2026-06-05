@@ -53,9 +53,6 @@ $unread_alerts = $unread_alerts ?? 0;
 
     <span class="nav-section-label">Tools</span>
 
-    <a href="serial.php?node=<?= $node ?>" class="nav-item <?= $active_page==='serial' ? 'active' : '' ?>">
-      <i class='bx bx-terminal'></i> Serial Monitor
-    </a>
     <a href="readings_summary.php?node=<?= $node ?>" class="nav-item <?= $active_page==='summary' ? 'active' : '' ?>">
       <i class='bx bx-bar-chart-alt-2'></i> Readings Summary
     </a>
