@@ -70,7 +70,7 @@ function loadCharts() {
   fetch('../api/get_history.php?node=' + NODE_ID + '&limit=20')
     .then(r => r.json())
     .then(data => {
-      const labels = data.map(d => d.time);
+      const labels = data.map(d => d.datetime ? d.datetime.slice(11, 19) : d.time);
       const tData  = data.map(d => parseFloat(d.temperature));
       const hData  = data.map(d => parseFloat(d.humidity));
       const rData  = data.map(d => parseFloat(d.rainfall));
