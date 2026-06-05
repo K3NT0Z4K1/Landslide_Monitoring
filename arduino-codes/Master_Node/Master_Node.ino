@@ -17,8 +17,6 @@
 
 /* ---------------------------
    SIM900A PINS
-   ESP32 TX2 = GPIO17 → SIM900A RX
-   ESP32 RX2 = GPIO16 → SIM900A TX
 --------------------------- */
 #define SIM900_RX 16
 #define SIM900_TX 17
@@ -27,17 +25,12 @@ HardwareSerial sim900(2);
 
 /* ---------------------------
    WIFI CREDENTIALS
-   Change before deploying
 --------------------------- */
 const char* ssid     = "NBSC";
 const char* password = "Nbsc@2k25";
 
 /* ---------------------------
    SERVER URL
-   Update this to your hosting URL
-   after uploading files via FTP
-   Example:
-   "http://yourdomain.com/slopeguard/api/receive_data.php"
 --------------------------- */
 const char* serverURL = "https://ics-dev.io/slopeguard/api/receive_data.php";
 
@@ -46,14 +39,25 @@ const char* serverURL = "https://ics-dev.io/slopeguard/api/receive_data.php";
 --------------------------- */
 String phoneNumber         = "+639278627982";
 unsigned long lastSMSAlert = 0;
-const unsigned long smsCooldown = 60000; // 1 minute cooldown
+const unsigned long smsCooldown = 60000;
 
 /* ---------------------------
    BUZZER SETTINGS
 --------------------------- */
 unsigned long buzzerStartTime = 0;
 bool buzzerActive             = false;
-const unsigned long buzzerDuration = 10000; // 10 seconds
+const unsigned long buzzerDuration = 10000;
+
+/* ---------------------------
+   CONFIRMATION COUNTERS
+   One per node (index 0 = unused,
+   1 = Node1, 2 = Node2, 3 = Node3)
+   Buzzer + SMS only fire after
+   CONFIRM_THRESHOLD consecutive
+   WARNING/DANGER packets
+--------------------------- */
+const int CONFIRM_THRESHOLD = 3;
+int warningCount[4] = {0, 0, 0, 0};
 
 /* ---------------------------
    SETUP
@@ -120,8 +124,12 @@ void loop() {
   /* Reconnect WiFi if dropped */
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("WiFi lost — reconnecting...");
-    WiFi.reconnect();
-    delay(3000);
+    WiFi.begin(ssid, password);
+    int w = 0;
+    while (WiFi.status() != WL_CONNECTED && w < 10) {
+      delay(500);
+      w++;
+    }
   }
 
   int packetSize = LoRa.parsePacket();
@@ -176,6 +184,12 @@ void parseAndSend(String data) {
     return;
   }
 
+  /* Clamp node_id to valid range 1–3 */
+  if (node_id < 1 || node_id > 3) {
+    Serial.println("ERROR: Invalid node ID — " + String(node_id));
+    return;
+  }
+
   Serial.println("Node ID : " + String(node_id));
   Serial.println("Temp    : " + String(temp, 2) + " C");
   Serial.println("Humidity: " + String(hum, 2)  + " %");
@@ -183,25 +197,44 @@ void parseAndSend(String data) {
   Serial.println("Rain    : " + String(rain, 2)  + " mm");
   Serial.println("Status  : " + dashboardStatus);
 
-  /* Buzzer + SMS on WARNING or DANGER */
+  /* ---------------------------
+     CONFIRMATION COUNTER LOGIC
+     Only trigger buzzer + SMS
+     after CONFIRM_THRESHOLD
+     consecutive WARNING/DANGER
+     packets from the same node
+  --------------------------- */
   if (dashboardStatus == "WARNING" || dashboardStatus == "DANGER") {
-    triggerBuzzer();
-    if (millis() - lastSMSAlert >= smsCooldown || lastSMSAlert == 0) {
-      sendSMSAlert(node_id, soil, rain, dashboardStatus);
-      lastSMSAlert = millis();
+    warningCount[node_id]++;
+
+    Serial.println("Confirm count [Node " + String(node_id) + "] : "
+                   + String(warningCount[node_id])
+                   + " / " + String(CONFIRM_THRESHOLD));
+
+    if (warningCount[node_id] >= CONFIRM_THRESHOLD) {
+      triggerBuzzer();
+      if (millis() - lastSMSAlert >= smsCooldown || lastSMSAlert == 0) {
+        sendSMSAlert(node_id, soil, rain, dashboardStatus);
+        lastSMSAlert = millis();
+      }
     }
+
   } else {
+    /* Reset counter when node goes back to safe */
+    if (warningCount[node_id] > 0) {
+      Serial.println("Node " + String(node_id) + " back to normal — counter reset");
+    }
+    warningCount[node_id] = 0;
     digitalWrite(BUZZER_RELAY, LOW);
     buzzerActive = false;
   }
 
-  /* Send to PHP server */
-  sendToServer(node_id, temp, hum, soil, rain, dashboardStatus);
+  /* Always send to PHP server regardless of alert state */
+  sendToServer(node_id, temp, hum, soil, rain, dashboardStatus, data);
 }
 
 /* ---------------------------
    STATUS CONVERSION
-   Sensor node risk → dashboard status
 --------------------------- */
 String convertStatus(String status) {
   status.toUpperCase();
@@ -209,7 +242,7 @@ String convertStatus(String status) {
   if (status == "LOW_RISK")      return "CAUTION";
   if (status == "MODERATE_RISK") return "WARNING";
   if (status == "HIGH_RISK")     return "DANGER";
-  if (status == "SAFE" || status == "WARNING" || status == "DANGER") return status;
+  if (status == "SAFE" || status == "CAUTION" || status == "WARNING" || status == "DANGER") return status;
   return "INVALID";
 }
 
@@ -243,8 +276,10 @@ void sendSMSAlert(int node, int soil, float rain, String status) {
 
   if (status == "DANGER") {
     message += "Risk Level: HIGH. Immediate action required.";
-  } else {
+  } else if (status == "WARNING") {
     message += "Risk Level: WARNING. Please monitor the area.";
+  } else {
+    message += "Risk Level: CAUTION. Stay alert.";
   }
 
   Serial.println("Sending SMS...");
@@ -257,7 +292,7 @@ void sendSMSAlert(int node, int soil, float rain, String status) {
   delay(1000);
   sim900.print(message);
   delay(500);
-  sim900.write(26); // CTRL+Z
+  sim900.write(26);
   delay(5000);
 
   Serial.println("SMS Alert Sent");
@@ -265,11 +300,11 @@ void sendSMSAlert(int node, int soil, float rain, String status) {
 
 /* ---------------------------
    SEND TO PHP SERVER
-   Single POST — PHP handles
-   sensor_readings, sensor_nodes,
-   and alert_history internally
+   Includes RSSI and raw packet
+   for signal monitoring and
+   debugging on the dashboard
 --------------------------- */
-void sendToServer(int node, float t, float h, int s, float r, String status) {
+void sendToServer(int node, float t, float h, int s, float r, String status, String rawData) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("ERROR: No WiFi — data not sent");
     return;
@@ -286,6 +321,8 @@ void sendToServer(int node, float t, float h, int s, float r, String status) {
   postData += "&soil_moisture="     + String(s);
   postData += "&rainfall="          + String(r, 2);
   postData += "&status="            + status;
+  postData += "&rssi="              + String(LoRa.packetRssi());
+  postData += "&raw_packet="        + rawData;
 
   Serial.println("Sending to server...");
 
