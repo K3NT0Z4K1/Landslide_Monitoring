@@ -6,11 +6,8 @@
 
 /* ---------------------------
    NODE CONFIGURATION
-   Change NODE_ID to 1, 2, or 3
-   before uploading to each node
 --------------------------- */
 #define NODE_ID  2
-
 
 /* ---------------------------
    PIN DEFINITIONS
@@ -31,24 +28,25 @@
 /* ---------------------------
    SOIL CALIBRATION
 --------------------------- */
-const int AirValue   = 570;  // dry reading
-const int WaterValue = 0;    // wet reading
+const int AirValue   = 618;
+const int WaterValue = 155;
 
 /* ---------------------------
    THRESHOLDS
 --------------------------- */
-const int   SOIL_CAUTION = 101;
-const int   SOIL_WARNING = 101;
-const int   SOIL_DANGER  = 101;
+const int   SOIL_CAUTION = 55;
+const int   SOIL_WARNING = 70;
+const int   SOIL_DANGER  = 80;
 
-const float RAIN_CAUTION = 999.0;
-const float RAIN_WARNING = 999.0;
-const float RAIN_DANGER  = 999.0;
+const float RAIN_CAUTION = 7.5;
+const float RAIN_WARNING = 15.0;
+const float RAIN_DANGER  = 30.0;
 
 /* ---------------------------
    TRANSMISSION INTERVAL
+   300000 = 5 minutes
 --------------------------- */
-const long INTERVAL = 300000; // 5 minutes
+const long INTERVAL = 30000;
 
 /* ---------------------------
    OBJECTS & GLOBALS
@@ -113,11 +111,11 @@ void transmit(float temperature, float humidity, int soilPercent,
               float rain1Hour, String landslideRisk,
               String soilStatus, String rainStatus, bool isAlert) {
 
-  String payload = String(NODE_ID)          + "," +
-                   String(temperature, 2)   + "," +
-                   String(humidity, 2)      + "," +
-                   String(soilPercent)      + "," +
-                   String(rain1Hour, 2)     + "," +
+  String payload = String(NODE_ID)        + "," +
+                   String(temperature, 2) + "," +
+                   String(humidity, 2)    + "," +
+                   String(soilPercent)    + "," +
+                   String(rain1Hour, 2)   + "," +
                    landslideRisk;
 
   LoRa.beginPacket();
@@ -165,17 +163,19 @@ void setup() {
   LoRa.setSignalBandwidth(125E3);
   LoRa.setCodingRate4(5);
   LoRa.setSyncWord(0x12);
+  LoRa.enableCrc();           // FIX 1: added — master requires this
 
-/* NODE 2 — 15 second stagger + jitter */
+  /* NODE 2 — 15 second stagger + jitter */
   randomSeed(analogRead(A1));
   long jitter = random(0, 3000);
+  Serial.println("Node 2 stagger delay — waiting...");
   delay(15000 + jitter);
   lastSend = millis();
 
   Serial.println("---------------------------");
   Serial.println("SlopeGuard Sensor Node Ready");
   Serial.println("Node ID  : " + String(NODE_ID));
-  Serial.println("Interval : 5min heartbeat / immediate on alert");
+  Serial.println("Interval : 5 min heartbeat / immediate on alert");
   Serial.println("---------------------------");
 }
 
