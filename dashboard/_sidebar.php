@@ -9,6 +9,7 @@ $active_page = $active_page ?? 'dashboard';
 $node        = $node        ?? 1;
 $unread_alerts = $unread_alerts ?? 0;
 ?>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 <aside class="sidebar">
   <div class="sidebar-logo">
     <svg width="34" height="34" viewBox="0 0 96 96" fill="none">
