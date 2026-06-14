@@ -52,6 +52,23 @@ $active_page   = 'map';
     }, 1000);
     /* toggleSidebar / closeSidebar defined in map.js (includes map interaction lock) */
   </script>
+  <script>
+    /* Sidebar functions defined early so onclick attributes work immediately */
+    function toggleSidebar() {
+      const sidebar  = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      const isOpen   = sidebar.classList.toggle('open');
+      backdrop.classList.toggle('open', isOpen);
+      if (typeof disableMapInteraction === 'function') {
+        isOpen ? disableMapInteraction() : enableMapInteraction();
+      }
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarBackdrop').classList.remove('open');
+      if (typeof enableMapInteraction === 'function') enableMapInteraction();
+    }
+  </script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="../assets/js/map.js"></script>
 

@@ -91,17 +91,4 @@ function enableMapInteraction() {
   document.getElementById('map').style.pointerEvents = '';
 }
 
-/* Override toggleSidebar/closeSidebar to also lock map */
-function toggleSidebar() {
-  const sidebar  = document.getElementById('sidebar');
-  const backdrop = document.getElementById('sidebarBackdrop');
-  const isOpen   = sidebar.classList.toggle('open');
-  backdrop.classList.toggle('open', isOpen);
-  isOpen ? disableMapInteraction() : enableMapInteraction();
-}
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarBackdrop').classList.remove('open');
-  enableMapInteraction();
-}
+/* toggleSidebar/closeSidebar defined inline in map.php */
