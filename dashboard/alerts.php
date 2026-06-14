@@ -120,6 +120,7 @@ $active_page   = 'alerts';
   </div>
 </div>
 
+<script src="../assets/js/app.js"></script>
 <script>
 setInterval(() => {
   document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
