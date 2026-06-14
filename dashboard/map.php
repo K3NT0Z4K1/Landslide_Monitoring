@@ -50,16 +50,7 @@ $active_page   = 'map';
     setInterval(() => {
       document.getElementById('clock').textContent = new Date().toTimeString().slice(0, 8);
     }, 1000);
-
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('sidebarBackdrop').classList.toggle('open');
-    }
-
-    function closeSidebar() {
-      document.getElementById('sidebar').classList.remove('open');
-      document.getElementById('sidebarBackdrop').classList.remove('open');
-    }
+    /* toggleSidebar / closeSidebar defined in map.js (includes map interaction lock) */
   </script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="../assets/js/map.js"></script>

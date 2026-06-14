@@ -65,3 +65,43 @@ legend.addTo(map);
 
 loadNodes();
 setInterval(loadNodes, 10000);
+
+/* ── Sidebar open/close: disable map interaction on mobile ── */
+function disableMapInteraction() {
+  if (!map) return;
+  map.dragging.disable();
+  map.touchZoom.disable();
+  map.doubleClickZoom.disable();
+  map.scrollWheelZoom.disable();
+  map.boxZoom.disable();
+  map.keyboard.disable();
+  if (map.tap) map.tap.disable();
+  document.getElementById('map').style.pointerEvents = 'none';
+}
+
+function enableMapInteraction() {
+  if (!map) return;
+  map.dragging.enable();
+  map.touchZoom.enable();
+  map.doubleClickZoom.enable();
+  map.scrollWheelZoom.enable();
+  map.boxZoom.enable();
+  map.keyboard.enable();
+  if (map.tap) map.tap.enable();
+  document.getElementById('map').style.pointerEvents = '';
+}
+
+/* Override toggleSidebar/closeSidebar to also lock map */
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const isOpen   = sidebar.classList.toggle('open');
+  backdrop.classList.toggle('open', isOpen);
+  isOpen ? disableMapInteraction() : enableMapInteraction();
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+  enableMapInteraction();
+}

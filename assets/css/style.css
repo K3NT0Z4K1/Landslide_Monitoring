@@ -152,7 +152,7 @@ body {
 .sidebar {
   position:fixed;top:0;left:0;width:224px;height:100vh;
   background:var(--t800);display:flex;flex-direction:column;
-  z-index:100;border-right:1px solid rgba(14,159,160,0.1);
+  z-index:1001;border-right:1px solid rgba(14,159,160,0.1);
 }
 
 .sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(14,159,160,0.1);display:flex;align-items:center;gap:12px;}
@@ -188,7 +188,8 @@ body {
    HAMBURGER + BACKDROP — hidden by default on desktop
 ============================================================ */
 .topbar-hamburger{display:none;}
-.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(5,20,20,0.45);z-index:199;}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(5,20,20,0.45);z-index:1000;pointer-events:none;}
+.sidebar-backdrop.open{pointer-events:all;}
 
 
 /* PLACEHOLDER — sidebar summary widget removed, now a dedicated page */
@@ -808,6 +809,18 @@ body {
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--t100);border-radius:3px;}
 
+
+/* ── Leaflet stacking — always below sidebar ── */
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control-container { z-index:400 !important; }
+.leaflet-pane { z-index:200 !important; }
+.leaflet-tile-pane { z-index:200 !important; }
+.leaflet-overlay-pane { z-index:300 !important; }
+.leaflet-shadow-pane { z-index:300 !important; }
+.leaflet-marker-pane { z-index:350 !important; }
+.leaflet-tooltip-pane { z-index:380 !important; }
+.leaflet-popup-pane { z-index:390 !important; }
 /* ============================================================
    RESPONSIVE
 ============================================================ */
@@ -826,7 +839,7 @@ body {
   .sidebar{
     transform:translateX(-100%);
     transition:transform 0.25s ease;
-    z-index:200;
+    z-index:1001;
   }
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
@@ -848,7 +861,7 @@ body {
   }
 
   /* Show backdrop when open */
-  .sidebar-backdrop.open{display:block;}
+  .sidebar-backdrop.open{display:block;pointer-events:all;}
 
   /* Tables scroll horizontally */
   .data-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
