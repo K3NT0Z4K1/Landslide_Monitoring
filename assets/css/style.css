@@ -865,12 +865,69 @@ body {
   .page-content{padding:12px 12px 28px;}
   .alert-banner{margin:10px 12px 0;font-size:12.5px;}
   .stat-grid{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));}
-  .login-right{padding:40px 24px;}
-  .login-card h2{font-size:20px;}
 }
 
-/* Login: hide left panel on small screens */
-@media(max-width:680px){
+/* Login: mobile — show compact branded form, hide left panel */
+@media(max-width:768px){
+  .login-page{flex-direction:column;}
+
+  /* Hide the full left branding panel */
   .login-left{display:none;}
-  .login-right{width:100%;}
+
+  /* Right panel becomes full screen */
+  .login-right{
+    width:100%;
+    min-height:100vh;
+    padding:48px 28px 36px;
+    justify-content:center;
+    background:linear-gradient(160deg,#051414 0%,#0d2a2b 40%,#f0f5f5 40%);
+  }
+
+  /* Card gets a solid white surface */
+  .login-card{
+    background:#f0f5f5;
+    border-radius:16px;
+    padding:32px 28px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.25);
+    max-width:380px;
+    width:100%;
+  }
+
+  /* Show a compact logo/brand header above the form on mobile */
+  .login-card::before{
+    content:'SlopeGuard';
+    display:block;
+    font-size:22px;
+    font-weight:600;
+    color:#051414;
+    letter-spacing:-0.3px;
+    margin-bottom:2px;
+  }
+
+  .login-card::after{
+    content:'Early Warning System';
+    display:block;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#0e9fa0;
+    margin-bottom:20px;
+  }
+
+  /* Tighten card label since we have the pseudo header */
+  .login-card-label{margin-top:4px;}
+
+  /* Footer note repositioned */
+  .login-footer-note{
+    position:static;
+    margin-top:20px;
+    text-align:center;
+    color:#4a8a8b;
+  }
+}
+
+@media(max-width:420px){
+  .login-right{padding:32px 16px 28px;}
+  .login-card{padding:28px 20px;}
 }
