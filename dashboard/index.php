@@ -48,26 +48,22 @@ $unread_alerts = $counts['total'] ?? 0;
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* ── Dashboard top row: stat cards + serial monitor side by side ── */
+    /* Dashboard top row: stat cards + serial monitor */
     .dashboard-top-row {
       display: grid;
-      grid-template-columns: 480px 1fr;
+      grid-template-columns: 300px minmax(0, 560px);
       gap: 18px;
-      align-items: stretch;
-      min-height: 360px;
+      align-items: start;
     }
 
-    /* 5 stat cards stacked in a column */
     .stat-col {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      align-self: start;
-      /* add this — stops the column from stretching to match serial height */
     }
 
     .stat-col .stat-card {
-      padding: 12px 16px;
+      padding: 11px 15px;
       border-radius: var(--r);
     }
 
@@ -81,11 +77,11 @@ $unread_alerts = $counts['total'] ?? 0;
     }
 
     .stat-col .stat-value {
-      font-size: 22px;
+      font-size: 20px;
     }
 
     .stat-col .stat-value.risk {
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .stat-col .stat-unit {
@@ -93,31 +89,34 @@ $unread_alerts = $counts['total'] ?? 0;
       margin-top: 2px;
     }
 
-    /* Inline serial monitor fills the right column */
+    /* Serial monitor: fixed height, never wider than its column */
     .ide-wrap--inline {
       margin: 0 !important;
       min-height: 0;
-      height: 400px;
+      height: 380px;
+      max-height: 420px;
+      width: 100%;
       display: flex;
       flex-direction: column;
     }
 
     .ide-wrap--inline .ide-output {
-      font-size: 11.5px;
-      line-height: 1.6;
+      font-size: 11px;
+      line-height: 1.55;
     }
 
     .ide-wrap--inline .ide-line {
       padding: 0 12px;
-      min-height: 19px;
+      min-height: 18px;
     }
 
     .ide-wrap--inline .ide-ts {
-      min-width: 54px;
-      width: 54px;
+      min-width: 52px;
+      width: 52px;
       font-size: 10px;
     }
 
+    /* Tablet: single column, stat cards go horizontal */
     @media (max-width: 960px) {
       .dashboard-top-row {
         grid-template-columns: 1fr;
@@ -125,11 +124,24 @@ $unread_alerts = $counts['total'] ?? 0;
 
       .stat-col {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       }
 
       .ide-wrap--inline {
-        height: 320px;
+        height: 300px;
+        max-height: 300px;
+      }
+    }
+
+    /* Mobile: two-column stat cards */
+    @media (max-width: 500px) {
+      .stat-col {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .ide-wrap--inline {
+        height: 260px;
+        max-height: 260px;
       }
     }
   </style>
