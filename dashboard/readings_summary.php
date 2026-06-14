@@ -155,6 +155,9 @@ $node_labels = [1=>"Node 1 — Lower Slope A",2=>"Node 2 — Lower Slope B",3=>"
 <div class="main">
   <header class="topbar">
     <div class="topbar-left">
+       <button class="topbar-hamburger" onclick="toggleSidebar()">
+      <i class='bx bx-menu'></i>
+    </button>
       <h1>Readings Summary</h1>
       <p><?= $node_labels[$node] ?> &middot; <?= date('l, F j Y') ?></p>
     </div>
