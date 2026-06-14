@@ -138,6 +138,9 @@ $unread_alerts = $counts['total'] ?? 0;
 <div class="main">
   <header class="topbar">
     <div class="topbar-left">
+       <button class="topbar-hamburger" onclick="toggleSidebar()">
+      <i class='bx bx-menu'></i>
+    </button>
       <h1>Dashboard</h1>
       <p>Welcome back, Admin &middot; <?= date('l, F j Y') ?></p>
     </div>
