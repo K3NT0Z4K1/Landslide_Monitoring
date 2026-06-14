@@ -372,6 +372,7 @@ $node_labels = [1=>"Node 1 — Lower Slope A",2=>"Node 2 — Lower Slope B",3=>"
   </div>
 </div>
 
+<script src="../assets/js/app.js"></script>
 <script>
 setInterval(() => { document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8); }, 1000);
 </script>

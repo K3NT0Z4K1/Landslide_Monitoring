@@ -498,5 +498,7 @@ function init() {
 init();
 setInterval(poll, 5000);
 </script>
+<script src="../assets/js/app.js"></script>
+
 </body>
 </html>

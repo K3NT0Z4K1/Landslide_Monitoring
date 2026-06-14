@@ -380,6 +380,7 @@ function download(content, filename, mime) {
 </script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="../assets/js/charts.js"></script>
+<script src="../assets/js/app.js"></script>
 
 <script>
 /* ── Inline Serial Monitor ── */
