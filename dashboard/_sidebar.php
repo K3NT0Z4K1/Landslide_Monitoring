@@ -10,7 +10,7 @@ $node        = $node        ?? 1;
 $unread_alerts = $unread_alerts ?? 0;
 ?>
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <svg width="34" height="34" viewBox="0 0 96 96" fill="none">
       <defs><clipPath id="sc2"><path d="M48 6 L90 22 L90 58 Q90 80 48 92 Q6 80 6 58 L6 22 Z"/></clipPath></defs>
