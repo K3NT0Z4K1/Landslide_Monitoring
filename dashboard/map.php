@@ -46,7 +46,6 @@ $active_page   = 'map';
     <div id="map"></div>
   </div>
 
-  <script src="../assets/js/app.js"></script>
   <script>
     setInterval(() => {
       document.getElementById('clock').textContent = new Date().toTimeString().slice(0, 8);
@@ -63,6 +62,7 @@ $active_page   = 'map';
     }
   </script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="../assets/js/map.js"></script>
 
 </body>
 
