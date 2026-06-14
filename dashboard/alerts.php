@@ -43,6 +43,9 @@ $active_page   = 'alerts';
 <div class="main">
   <header class="topbar">
     <div class="topbar-left">
+       <button class="topbar-hamburger" onclick="toggleSidebar()">
+      <i class='bx bx-menu'></i>
+    </button>
       <h1>Alert History</h1>
       <p>All recorded warnings and danger events &middot; <?= date('l, F j Y') ?></p>
     </div>
