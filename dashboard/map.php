@@ -27,6 +27,9 @@ $active_page   = 'map';
 <div class="main">
   <header class="topbar">
     <div class="topbar-left">
+       <button class="topbar-hamburger" onclick="toggleSidebar()">
+      <i class='bx bx-menu'></i>
+    </button>
       <h1>Sensor Map</h1>
       <p>Real-time node locations &middot; <?= date('l, F j Y') ?></p>
     </div>
