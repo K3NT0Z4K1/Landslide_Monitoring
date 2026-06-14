@@ -820,6 +820,7 @@ body {
   .sidebar{transform:translateX(-100%);transition:transform 0.25s ease;z-index:200;}
   .sidebar.open{transform:translateX(0);}
   .main{margin-left:0;}
+  .topbar-hamburger { display: none; }
   .topbar-hamburger{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-size:20px;flex-shrink:0;order:-1;}
   .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(5,20,20,0.45);z-index:199;}
   .sidebar-backdrop.open{display:block;}
