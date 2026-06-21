@@ -48,14 +48,16 @@ $unread_alerts = $counts['total'] ?? 0;
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Dashboard top row: stat cards + serial monitor */
+    /* ── Dashboard top row: stat cards + serial monitor ── */
     .dashboard-top-row {
       display: grid;
-      grid-template-columns: 300px minmax(0, 560px);
+      /* Stat cards: fixed 380px. Serial monitor: fills rest, max 680px so it never dominates */
+      grid-template-columns: 380px minmax(0, 680px);
       gap: 18px;
       align-items: start;
     }
 
+    /* Stat cards stacked vertically */
     .stat-col {
       display: flex;
       flex-direction: column;
@@ -63,7 +65,7 @@ $unread_alerts = $counts['total'] ?? 0;
     }
 
     .stat-col .stat-card {
-      padding: 11px 15px;
+      padding: 14px 18px;
       border-radius: var(--r);
     }
 
@@ -72,28 +74,28 @@ $unread_alerts = $counts['total'] ?? 0;
     }
 
     .stat-col .stat-label {
-      margin-bottom: 4px;
-      font-size: 10px;
+      margin-bottom: 6px;
+      font-size: 10.5px;
     }
 
     .stat-col .stat-value {
-      font-size: 20px;
+      font-size: 26px;
     }
 
     .stat-col .stat-value.risk {
-      font-size: 13px;
+      font-size: 15px;
     }
 
     .stat-col .stat-unit {
-      font-size: 10px;
-      margin-top: 2px;
+      font-size: 11px;
+      margin-top: 3px;
     }
 
-    /* Serial monitor: fixed height, never wider than its column */
+    /* Serial monitor — tall enough to read, never unbounded */
     .ide-wrap--inline {
       margin: 0 !important;
       min-height: 0;
-      height: 380px;
+      height: 420px;
       max-height: 420px;
       width: 100%;
       display: flex;
@@ -101,22 +103,22 @@ $unread_alerts = $counts['total'] ?? 0;
     }
 
     .ide-wrap--inline .ide-output {
-      font-size: 11px;
-      line-height: 1.55;
+      font-size: 11.5px;
+      line-height: 1.6;
     }
 
     .ide-wrap--inline .ide-line {
       padding: 0 12px;
-      min-height: 18px;
+      min-height: 19px;
     }
 
     .ide-wrap--inline .ide-ts {
-      min-width: 52px;
-      width: 52px;
+      min-width: 54px;
+      width: 54px;
       font-size: 10px;
     }
 
-    /* Tablet: single column, stat cards go horizontal */
+    /* Tablet: collapse to single column, stat cards go horizontal */
     @media (max-width: 960px) {
       .dashboard-top-row {
         grid-template-columns: 1fr;
@@ -124,16 +126,16 @@ $unread_alerts = $counts['total'] ?? 0;
 
       .stat-col {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
       }
 
       .ide-wrap--inline {
-        height: 300px;
-        max-height: 300px;
+        height: 320px;
+        max-height: 320px;
       }
     }
 
-    /* Mobile: two-column stat cards */
+    /* Mobile: two-column stat cards, shorter serial */
     @media (max-width: 500px) {
       .stat-col {
         grid-template-columns: repeat(2, 1fr);
@@ -142,6 +144,47 @@ $unread_alerts = $counts['total'] ?? 0;
       .ide-wrap--inline {
         height: 260px;
         max-height: 260px;
+      }
+    }
+
+    /* ── Desktop (≥1024px) only: balanced 2x2 stat grid + serial monitor ──
+       Matches reference layout: Temp/Rainfall row 1, Humidity/Risk row 2,
+       Soil Moisture alone on row 3 (last cell adapts), Serial Monitor fills
+       the full height of that block on the right.
+       Everything below 1024px (base rules above + the two media blocks
+       above this one) is completely untouched. */
+    @media (min-width: 1024px) {
+      .dashboard-top-row {
+        grid-template-columns: minmax(300px, 560px) minmax(360px, 1fr);
+        align-items: stretch;
+      }
+
+      .stat-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      /* Visual reorder only — DOM order, IDs, and JS bindings are untouched.
+         CSS `order` lets grid auto-placement land each card in the cell
+         shown in the reference image without moving any markup. */
+      .stat-col .stat-card:nth-child(1) { order: 1; } /* Temperature */
+      .stat-col .stat-card:nth-child(2) { order: 3; } /* Humidity */
+      .stat-col .stat-card:nth-child(3) { order: 5; } /* Soil Moisture */
+      .stat-col .stat-card:nth-child(4) { order: 2; } /* Rainfall */
+      .stat-col .stat-card:nth-child(5) { order: 4; } /* Landslide Risk */
+
+      .stat-col .stat-card {
+        padding: 16px 18px;
+      }
+
+      .stat-col .stat-value {
+        font-size: 24px;
+      }
+
+      .stat-col .stat-value.risk {
+        font-size: 15px;
       }
     }
   </style>
